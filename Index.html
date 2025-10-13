@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ACS Troponin Workflow — Alfred (Alinity + POC)</title>
+<meta name="theme-color" content="#0b0f14" />
+<link rel="manifest" href="manifest.webmanifest" />
+<style>
+  :root{
+    --bg:#0b0f14; --card:#121821; --muted:#9fb0c3; --text:#e8f0f7;
+    --green:#19b36b; --amber:#e6a23c; --red:#f35b5b; --blue:#4aa3ff;
+    --border:#1f2a37; --accent:#6ad1ff;
+  }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+  header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  header h1{margin:0;font-size:18px;font-weight:600}
+  .badge{font-size:12px;padding:2px 8px;border:1px solid var(--border);border-radius:999px;color:var(--muted)}
+  main{max-width:980px;margin:0 auto;padding:16px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+  .col-12{grid-column:span 12}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  input[type="number"],select{width:100%;background:#0e141c;border:1px solid var(--border);color:var(--text);
+    padding:10px 12px;border-radius:10px;outline:none}
+  .row{display:flex;gap:12px;flex-wrap:wrap} .row>*{flex:1 1 220px}
+  .help{font-size:12px;color:var(--muted)}
+  .result{border-radius:14px;padding:16px;border:1px solid var(--border);background:#0e141c;margin-bottom:10px}
+  .ok{border-left:6px solid var(--green)} .warn{border-left:6px solid var(--amber)}
+  .bad{border-left:6px solid var(--red)} .info{border-left:6px solid var(--blue)}
+  .btn{appearance:none;border:1px solid var(--border);background:#0e141c;color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer}
+  .btn.primary{background:#122034;border-color:#17314f}
+  .toggle {font-size:13px;color:var(--muted);}
+  .switch {position: relative;display: inline-block;width: 36px;height: 20px;margin-left:8px;}
+  .switch input {opacity: 0;width: 0;height: 0;}
+  .slider {position: absolute;cursor: pointer;top: 0;left: 0;right: 0;bottom: 0;background-color:#555;transition:.3s;border-radius:34px;}
+  .slider:before {position: absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background-color:white;transition:.3s;border-radius:50%;}
+  .switch input:checked + .slider {background-color: var(--green);}
+  .switch input:checked + .slider:before {transform:translateX(16px);}
+  .foot{font-size:12px;color:var(--muted)}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted);margin-right:6px}
+  details{border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+  summary{cursor:pointer;color:var(--muted)}
+  code{background:#0b1220;border:1px solid var(--border);padding:0 6px;border-radius:6px}
+</style>
+</html>
+</head>
+<body>
+<header>
+  <h1>ACS Troponin Workflow — Alfred</h1>
+</header>
+
+<main class="grid">
+  <section class="card col-12">
+    <div class="row">
+      <div>
+        <label>Assay (don’t mix)</label>
+        <select id="assay">
+          <option value="alinity" selected>Abbott Alinity (lab)</option>
+          <option value="poc">POC (Quidel TriageTrue)</option>
+        </select>
+      </div>
+      <div>
+        <label id="sexLabel">Sex for 99th centile (Alinity: ♂ 25 / ♀ 15)</label>
+        <select id="sex">
+          <option value="male">Male</option>
+          <option value="female" selected>Female</option>
+          <option value="lower">Use lower cut-off</option>
+        </select>
+        <div class="help" id="z99Note">Current 99th = 15 ng/L</div>
+      </div>
+      <div>
+        <label>Symptom timing input</label>
+        <select id="onsetMode">
+          <option value="at" selected>Enter time of onset</option>
+          <option value="since">Enter time since onset</option>
+        </select>
+      </div>
+      <div id="onsetSinceWrapper">
+        <label>Time since symptom onset</label>
+        <div class="row">
+          <input type="number" id="onsetHours" placeholder="Hours" min="0" step="1">
+          <input type="number" id="onsetMins" placeholder="Minutes" min="0" max="59" step="1">
+        </div>
+        <div class="help">&gt; 2 h enables single-sample rule-out if 0 h &lt; 4 (Alinity/POC).</div>
+      </div>
+      <div id="onsetAtWrapper" style="display:none">
+        <label>Time of symptom onset</label>
+        <input type="time" id="onsetAt" />
+        <div class="help">The app will calculate time since onset automatically.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="col-12" id="output"></section>
+
+  <section class="card col-12" id="tropSection" style="display:none">
+    <div class="toggle" style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px;">
+      <span>Record sample times</span>
+      <label class="switch">
+        <input type="checkbox" id="includeTimes">
+        <span class="slider round"></span>
+      </label>
+    </div>
+      <div class="row">
+        <div>
+          <label>0 h hs-Troponin I (ng/L)</label>
+          <input type="number" id="t0" placeholder="e.g., 3.0" min="0" step="0.1">
+          <div class="help small" id="t0TimeWrapper" style="display:none;">
+            <input type="time" id="t0Time" /> <span>Sample time (optional)</span>
+          </div>
+        </div>
+        <div>
+          <label id="t1label">Second sample (1 h from 0 h)</label>
+          <input type="number" id="t1" placeholder="leave blank until due" min="0" step="0.1">
+          <div class="help small" id="t1TimeWrapper" style="display:none;">
+            <input type="time" id="t1Time" /> <span>Sample time (optional)</span>
+          </div>
+          <div class="help" id="earlyNote">Alinity early presenters: if onset < 60 min and T0 < 5 → the next sample is at 2 h from time‑0; otherwise 1 h from time‑0.</div>
+        </div>
+        <div>
+          <label>3 h (from 0 h) sample</label>
+          <input type="number" id="t3" placeholder="leave blank until due" min="0" step="0.1">
+          <div class="help small" id="t3TimeWrapper" style="display:none;">
+            <input type="time" id="t3Time" /> <span>Sample time (optional)</span>
+          </div>
+        </div>
+        <!-- Compute pathway button and teaching notes checkbox moved above HEART input -->
+        <div style="flex-basis:100%;height:0"></div>
+        <div style="margin-top:4px">
+          <button class="btn primary" id="compute" disabled>Compute pathway</button>
+        </div>
+        <div>
+          <label>HEART score (optional)</label>
+          <input type="number" id="heart" placeholder="0–10" min="0" max="10" step="1">
+        </div>
+      </div>
+    <!-- HEART Score Calculator (optional, collapsible) -->
+    <details id="heartCalc" style="margin-top:12px">
+      <summary>HEART Score Calculator (optional)</summary>
+      <div class="help" style="margin:8px 0">This follows the Alfred guideline description of the HEART score.</div>
+      <div class="row">
+        <div>
+          <label>History</label>
+          <select id="heartHistory">
+            <option value="0">Slightly suspicious (0)</option>
+            <option value="1">Moderately suspicious (1)</option>
+            <option value="2">Highly suspicious (2)</option>
+          </select>
+          <div class="help">High‑risk features: diaphoresis, vomiting, exertional or strong‑emotion pain, radiation to arms, similar to prior MI.</div>
+        </div>
+        <div>
+          <label>ECG</label>
+          <select id="heartECG">
+            <option value="0">Normal (0)</option>
+            <option value="1">Non‑specific repolarisation disturbance (1)</option>
+            <option value="2">Significant ST deviation or new T‑wave inversion (2)</option>
+          </select>
+        </div>
+        <div>
+          <label>Age</label>
+          <select id="heartAge">
+            <option value="0">&lt; 45 (0)</option>
+            <option value="1">45–64 (1)</option>
+            <option value="2">≥ 65 (2)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Risk factors</label>
+          <select id="heartRisk">
+            <option value="0">No known risk factors (0)</option>
+            <option value="1">1–2 risk factors (1)</option>
+            <option value="2">≥ 3 risk factors or known atherosclerotic disease (2)</option>
+          </select>
+          <div class="help">Risk factors: smoking, diabetes, HTN, hypercholesterolaemia, family history &lt;55 (1st‑degree), obesity (BMI ≥30). Known disease: CAD, stroke, PAD.</div>
+        </div>
+        <div>
+          <label>Troponin (initial)</label>
+          <select id="heartTrop">
+            <option value="0">Not elevated (0)</option>
+            <option value="1">1–3 × ULN (1)</option>
+            <option value="2">≥ 3 × ULN (2)</option>
+          </select>
+          <div class="help">ULN = 99th centile (Alinity: ♂25 / ♀15 ng/L; POC: ♂26 / ♀14). Uses current assay/sex.</div>
+          <div class="toggle" style="display:flex;align-items:center;justify-content:flex-start;margin-top:6px;">
+            <span>Use patient’s 0 h troponin value</span>
+            <label class="switch">
+              <input type="checkbox" id="heartTropAuto">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button class="btn" id="heartUseBtn" type="button">Use this HEART score</button>
+        </div>
+      </div>
+      <div id="heartTotalBox" class="result info" style="margin-top:10px">
+        <strong>HEART total:</strong> <span id="heartTotal">0</span> — <span id="heartBand">Low risk (0–3)</span>
+      </div>
+    </details>
+  </section>
+
+  <section class="card col-12">
+    <details>
+      <summary>Safety rails & reminders</summary>
+      <ul>
+        <li>ECG within 10 minutes for suspected ACS; manage STEMI on the dedicated pathway.</li>
+        <li>This helper focuses on the hs-Troponin decision algorithm only.</li>
+        <li>Repeat <strong>ECG</strong> when pain changes or with troponin draws.</li>
+        <li><strong>Do not mix assays</strong> for a given patient.</li>
+        <li><strong>3 h</strong> means 3 hours from the 0 h sample (time-0).</li>
+        <li>Early presenters (Alinity only): if onset &lt; 60 min and 0 h &lt; 5 → 2 h sample; if ≥ 60 min → 1 h sample.</li>
+        <li>Unstable angina (ongoing/crescendo pain) → discuss with Cardiology (not suitable for rapid rule-out).</li>
+      </ul>
+    </details>
+  </section>
+
+  <section class="card col-12">
+    <details>
+      <summary>References & Resources</summary>
+      <ul>
+        <li><a href="https://app.prompt.org.au/download/135694?code=5b1736c319b4fc04be09b1b3fd8eb25a" target="_blank" rel="noopener">Alfred Health Chest Pain &amp; Suspected ACS Guideline (v5, 2025)</a></li>
+        <li><a href="https://academic.oup.com/eurheartj/article/44/38/3720/7243210?login=false" target="_blank" rel="noopener">ESC 2023 ACS Guideline — European Heart Journal</a></li>
+      </ul>
+    </details>
+  </section>
+
+  <section class="col-12 foot">
+    <div class="pill">Rule-out: &gt; 2 h + 0 h &lt; 4, or 0 h &lt; 5 (Alinity) with Δ1h &lt; 2</div>
+    <div class="pill">Intermediate: 0 h 5–63 (Alinity) / 5–59 (POC) with Δ small → take 3 h</div>
+    <div class="pill">Rule-in: absolute ≥ 64 (Alinity) / ≥ 60 (POC) or Δ ≥ 6 / ≥ 8</div>
+    <div class="help" style="margin-top:8px">
+      Implements Alfred ACS guideline v5 (2025). Decision support only; use clinical judgment.
+    </div>
+  </section>
+</main>
+
+<script>
+// --- HEART Score Calculator logic ---
+function heartComputeTotal(){
+  const h = Number(($('heartHistory')||{value:0}).value||0);
+  const e = Number(($('heartECG')||{value:0}).value||0);
+  const a = Number(($('heartAge')||{value:0}).value||0);
+  const r = Number(($('heartRisk')||{value:0}).value||0);
+  const t = Number(($('heartTrop')||{value:0}).value||0);
+  const total = h+e+a+r+t;
+  const band = total<=3 ? 'Low risk (0–3)' : total<=6 ? 'Intermediate risk (4–6)' : 'High risk (7–10)';
+  if ($('heartTotal')) $('heartTotal').textContent = total;
+  if ($('heartBand')) $('heartBand').textContent = band;
+  return total;
+}
+
+// --- HEART Troponin (initial) auto helper ---
+function heartAutoTroponinScore(){
+  // Only act if the auto checkbox is on
+  const auto = $('heartTropAuto') && $('heartTropAuto').checked;
+  if (!auto) return;
+  const t0 = n($('t0').value);
+  if (t0===null) return;
+  const uln = z99(); // current assay- and sex-specific 99th centile
+  if (!uln) return;
+  let score = 0;
+  if (t0 < uln) score = 0;
+  else if (t0 < 3*uln) score = 1;
+  else score = 2;
+  if ($('heartTrop')) $('heartTrop').value = String(score);
+  // refresh total
+  heartComputeTotal();
+}
+/* PWA registration */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(console.error);
+}
+
+/* Assay constants */
+const ALINITY = {
+  name: 'Alinity',
+  lodSingleRuleOut: 4,
+  earlyDeltaRuleOut: 2,
+  obsUpper: 63,
+  ruleInAbs: 64,
+  ruleInDelta: 6,
+  z99: { male:25, female:15, lower:15 },
+  earlyPresenterRule: true // 1h vs 2h for t0<5 and onset<60m
+};
+const POC = {
+  name: 'POC',
+  lodSingleRuleOut: 4,
+  earlyDeltaRuleOut: 3,
+  obsUpper: 59,
+  ruleInAbs: 60,
+  ruleInDelta: 8,
+  z99: { male:26, female:14, lower:14 },
+  earlyPresenterRule: false // not specified like Alinity in guideline
+};
+
+const $ = id => document.getElementById(id);
+const n = v => (v===''||v==null) ? null : Number(v);
+const fmt = x => (x==null||isNaN(x))?'—':(Math.round(x*10)/10).toFixed(1);
+
+// --- Helper functions for sample times and intervals ---
+function getSampleTime(id){
+  const v = $(id).value;
+  if(!v) return null;
+  const [h,m] = v.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h,m,0,0);
+  return d;
+}
+function minutesDiff(later, earlier){
+  if(!later || !earlier) return null;
+  let diff = (later - earlier)/60000;
+  if(diff < 0) diff += 1440;
+  return Math.round(diff);
+}
+function addMinutes(date, mins){
+  if(!date) return null;
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() + mins);
+  return d;
+}
+function fmtTime(d){
+  return d ? d.toTimeString().slice(0,5) : '—';
+}
+
+function onsetMode(){
+  return $('onsetMode').value;
+}
+
+function hasOnset(){
+  if(onsetMode() === 'since'){
+    const h = $('onsetHours').value;
+    const m = $('onsetMins').value;
+    // consider provided if either field has a value (including 0)
+    return (h !== '' || m !== '');
+  } else {
+    return $('onsetAt').value !== '';
+  }
+}
+
+function minutesSinceOnset(){
+  if(onsetMode() === 'since'){
+    return (n($('onsetHours').value)||0)*60 + (n($('onsetMins').value)||0);
+  } else {
+    const onsetTimeStr = $('onsetAt').value;
+    if(!onsetTimeStr) return null;
+    const now = new Date();
+    const [onsetHour, onsetMinute] = onsetTimeStr.split(':').map(Number);
+    const onsetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), onsetHour, onsetMinute);
+    let diff = (now - onsetDate) / 60000; // diff in minutes
+    if(diff < 0){
+      // onset time is from previous day
+      diff += 24 * 60;
+    }
+    return Math.floor(diff);
+  }
+}
+
+function setTropSectionVisibility(){
+  const show = hasOnset();
+  $('tropSection').style.display = show ? 'block' : 'none';
+  $('compute').disabled = !show;
+  if (!show){
+    // clear output prompt to nudge the user to enter onset first
+    $('output').innerHTML = line(
+      `<h3>Enter ${onsetMode()==='at'?'time of symptom onset':'time since symptom onset'}</h3>`+
+      `<div class="help">${onsetMode()==='at'?'Add the clock time of onset':'Add hours and/or minutes'} to continue. The app will then guide sampling times and rule‑out logic.</div>`,
+      'info'
+    );
+  } else {
+    // once onset is provided, show step‑wise guidance if T0 is not yet entered
+    const t0 = n($('t0').value);
+    if (t0===null){
+      // trigger the compute to show the “Step 1 — Take 0 h troponin now” panel
+      document.getElementById('compute').click();
+    }
+  }
+}
+
+function updateOnsetModeUI(){
+  if(onsetMode() === 'since'){
+    $('onsetSinceWrapper').style.display = 'block';
+    $('onsetAtWrapper').style.display = 'none';
+  } else {
+    $('onsetSinceWrapper').style.display = 'none';
+    $('onsetAtWrapper').style.display = 'block';
+  }
+  setTropSectionVisibility();
+}
+
+function currentAssay(){
+  return ($('assay').value==='alinity') ? ALINITY : POC;
+}
+function z99(){
+  const a = currentAssay();
+  const s = $('sex').value;
+  return a.z99[s] || a.z99.female;
+}
+function line(html, cls='info'){ return `<div class="result ${cls}">${html}</div>`; }
+
+function updateAssayUI(){
+  const a = currentAssay();
+  $('sexLabel').textContent =
+    `Sex for 99th centile (${a===ALINITY ? 'Alinity: ♂ 25 / ♀ 15' : 'POC: ♂ 26 / ♀ 14'})`;
+  $('z99Note').textContent = `Current 99th = ${z99()} ng/L`;
+  // Early note only applicable to Alinity
+  const t0 = n($('t0').value);
+  const onsetMin = minutesSinceOnset();
+  const showEarlyNote = (a===ALINITY && t0!==null && t0<5);
+  $('earlyNote').style.display = showEarlyNote ? 'block' : 'none';
+  $('t1label').textContent = (a===ALINITY && t0!==null && t0<5 && onsetMin<60)
+    ? 'Second sample (2 h from 0 h)'
+    : 'Second sample (1 h from 0 h)';
+}
+['assay','sex','onsetHours','onsetMins','t0'].forEach(id => $(id).addEventListener('input', updateAssayUI));
+['onsetHours','onsetMins'].forEach(id => $(id).addEventListener('input', setTropSectionVisibility));
+$('onsetMode').addEventListener('change', updateOnsetModeUI);
+$('onsetAt').addEventListener('input', setTropSectionVisibility);
+// run once on load
+updateOnsetModeUI();
+
+/* Compute */
+$('compute').addEventListener('click', ()=>{
+  if (!hasOnset()){
+    $('output').innerHTML = line(
+      `<h3>Enter ${onsetMode()==='at'?'time of symptom onset':'time since symptom onset'}</h3>`+
+      `<div class="help">${onsetMode()==='at'?'Provide the clock time of onset':'Provide hours and/or minutes'} to begin.</div>`,
+      'info'
+    );
+    return;
+  }
+  const out = [];
+  const a = currentAssay();
+  const onsetMin = minutesSinceOnset();
+  const t0 = n($('t0').value), t1=n($('t1').value), t3=n($('t3').value);
+  const z = z99();
+  const heart = n($('heart').value);
+
+  // --- Read sample times and intervals ---
+  const t0Time = getSampleTime('t0Time');
+  const t1Time = getSampleTime('t1Time');
+  const t3Time = getSampleTime('t3Time');
+  const elapsed1 = minutesDiff(t1Time, t0Time);
+  const elapsed3 = minutesDiff(t3Time, t0Time);
+
+  if (t0===null){
+    const a = currentAssay();
+    const onsetMin = minutesSinceOnset();
+    let nextTimingMsg = '';
+    if (a===ALINITY){
+      if (onsetMin < 60){
+        nextTimingMsg = 'Plan a 1‑hour sample from time‑0 (if T0 returns <5 AND onset <60 min, the app will switch you to a 2‑hour sample).';
+      } else {
+        nextTimingMsg = 'Plan a 1‑hour sample from time‑0.';
+      }
+    } else {
+      nextTimingMsg = 'Plan a 1‑hour sample from time‑0.';
+    }
+    // Advisory: if close to the 60 min cutoff, suggest timing T0 at 60 min (if clinically safe)
+    let near60Msg = '';
+    if (onsetMin !== null && onsetMin < 60){
+      const minsTo60 = 60 - onsetMin;
+      if (minsTo60 <= 10){
+        near60Msg = `<div class="help">You are ${minsTo60} min short of 60 min since onset. If clinically safe, consider drawing the 0 h sample at the 60‑min mark to use the 1 h pathway (otherwise proceed now; early‑presenter rule may require a 2 h sample if T0 &lt; 5).</div>`;
+      }
+    }
+    let singleRuleOutMsg = '';
+    if (onsetMin >= 120) {
+      singleRuleOutMsg = '<div class="result ok" style="margin-top:8px"><strong>Single‑sample rule‑out possible:</strong> if the 0 h troponin returns &lt; 4 ng/L, this patient can be cleared on a single troponin.</div>';
+    }
+    $('output').innerHTML = line(`<h3>Step 1 — Take 0 h troponin now</h3>
+      <div>Assay: ${a.name}. Symptom onset: ${Math.floor(onsetMin/60)} h ${onsetMin%60} min ago.</div>
+      <div><strong>Next sample:</strong> ${nextTimingMsg}</div>
+      ${near60Msg}
+      ${singleRuleOutMsg}
+      <div class="help">Enter the 0 h result when available to continue.</div>`, 'info');
+    return;
+  }
+
+  /* Single-sample rule-out (both assays) */
+  if (onsetMin>=120 && t0 < a.lodSingleRuleOut){
+    if (t1===null){
+      $('output').innerHTML = line(`<h3>Rule-out (single sample)</h3>
+        <div>Onset ≥ 2 h and 0 h ${fmt(t0)} &lt; ${a.lodSingleRuleOut} → discharge if ECG normal.</div>
+        <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok');
+      if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+      if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+      if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
+      if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+      return;
+    } else {
+      // Note: 1 h sample available — interpret both values using 0/1 h algorithm
+      out.push(line(`<div><em>Note:</em> 1 h result available; interpreting both 0 h and 1 h per the 0/1 h algorithm.</div>`, 'info'));
+      // do not return; proceed to delta-based logic below
+    }
+  }
+
+  /* Early-presenter branch (only documented for Alinity, t0<5) */
+  if (a===ALINITY && t0 < 5){
+    if (t1===null){
+      const msg = (onsetMin<60) ? 'Take a 2-hour sample from time-0.' : 'Take a 1-hour sample from time-0.';
+      let dueLine = '';
+      const nextMins = (onsetMin<60 && t0<5) ? 120 : 60;
+      if (t0Time){
+        const due = addMinutes(t0Time, nextMins);
+        const sinceTxt = nextMins === 120 ? '(2 h since time‑0)' : '(1 h since time‑0)';
+        dueLine = `<div class="help">Next troponin due at ${fmtTime(due)} ${sinceTxt}</div>`;
+      } else {
+        dueLine = `<div class="help">Enter the T0 sample time to calculate an exact due time.</div>`;
+      }
+      const heading = (onsetMin<60) ? 'Early presenter branch' : 'Low initial troponin pathway (0/1 h)';
+      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>${heading}</h3><div>${msg}</div>${dueLine}`, 'info'); }
+      return;
+    }
+    const d01 = Math.abs(t1 - t0);
+    if (d01 < a.earlyDeltaRuleOut){
+      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-out (0/1 h)</h3>
+        <div>Δ 0→${onsetMin<60?'2':'1'} h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} with 0 h &lt; 5 → discharge if ECG normal.</div>
+        <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok'); }
+      if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+      if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+      if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
+      if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+      return;
+    }
+    if (d01 >= a.ruleInDelta || t1 >= a.ruleInAbs){
+      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-in (0/1 h)</h3>
+        <div>${d01>=a.ruleInDelta?`Δ ≥ ${a.ruleInDelta} ng/L`:`value ≥ ${a.ruleInAbs} ng/L`} → treat as ACS; Cardiology admission.</div>`, 'bad'); }
+      if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+      if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+      if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
+      if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+      return;
+    }
+    // proceed to 3 h
+    if (t3===null){
+      let due3 = '';
+      if (t0Time){
+        const dueAt = addMinutes(t0Time, 180);
+        due3 = `<div class="help">3 h sample due at ${fmtTime(dueAt)} (3 h since time‑0)</div>`;
+      }
+      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (0/1 h)</h3><div>Obtain 3 h sample (from time-0).</div>${due3}`, 'warn'); }
+      return;
+    }
+    return eval3h(a, t0, t3, z, t0Time, t1Time, t3Time, elapsed1, elapsed3);
+  }
+
+  /* Immediate rule-in by absolute or delta if 1 h available (both assays) */
+  if (t0 >= a.ruleInAbs || (t1!==null && Math.abs(t1 - t0) >= a.ruleInDelta)){
+    $('output').innerHTML = line(`<h3>Rule-in</h3>
+      <div>${t0>=a.ruleInAbs?`0 h ≥ ${a.ruleInAbs} ng/L`:`Δ ≥ ${a.ruleInDelta} ng/L`} → treat as ACS; Cardiology admission.</div>`, 'bad');
+    if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+    if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+    if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
+    if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+    return;
+  }
+
+  /* Intermediate band (Alinity 5–63; POC 5–59) */
+  const lowerInt = 5, upperInt = a.obsUpper;
+  if (t0 >= lowerInt && t0 <= upperInt){
+    if (t1===null){
+      let due1 = '';
+      if (t0Time){
+        const dueAt = addMinutes(t0Time, 60);
+        due1 = `<div class="help">1 h sample due at ${fmtTime(dueAt)} (1 h since time‑0)</div>`;
+      } else {
+        due1 = `<div class="help">Enter T0 sample time to calculate the 1 h due time.</div>`;
+      }
+      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (observe)</h3><div>Take a 1-hour sample to assess Δ.</div>${due1}`, 'warn'); }
+      return;
+    }
+    const d01 = Math.abs(t1 - t0);
+    if (d01 >= a.ruleInDelta){
+      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-in</h3><div>Δ 0→1 h ≥ ${a.ruleInDelta} ng/L → Cardiology.</div>`, 'bad'); }
+      if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+      if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+      if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
+      if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+      return;
+    }
+    if (t3===null){
+      let due3 = '';
+      if (t0Time){
+        const dueAt = addMinutes(t0Time, 180);
+        due3 = `<div class="help">3 h sample due at ${fmtTime(dueAt)} (3 h since time‑0)</div>`;
+      }
+      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (observe)</h3><div>Δ 0→1 h &lt; ${a.ruleInDelta} → obtain 3 h sample (from time-0).</div>${due3}`, 'warn'); }
+      return;
+    }
+    return eval3h(a, t0, t3, z, t0Time, t1Time, t3Time, elapsed1, elapsed3);
+  }
+
+  $('output').innerHTML = line(`<h3>Needs more information</h3><div>Enter due samples or review clinical status.</div>`,'info');
+});
+
+function eval3h(a, t0, t3, z99, t0Time, t1Time, t3Time, elapsed1, elapsed3){
+  const d03 = Math.abs(t3 - t0);
+  if (t3 >= a.ruleInAbs || d03 >= a.ruleInDelta){
+    $('output').innerHTML = line(`<h3>Rule-in at 3 h</h3>
+      <div>${t3>=a.ruleInAbs?`3 h ≥ ${a.ruleInAbs} ng/L`:`Δ 0→3 h ≥ ${a.ruleInDelta} ng/L`} → Cardiology.</div>`, 'bad');
+    if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+    if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+    if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
+    if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+    return;
+  }
+  if (t3 < z99 && d03 < a.ruleInDelta){
+    $('output').innerHTML = line(`<h3>Rule-out at 3 h</h3>
+      <div>3 h ${fmt(t3)} &lt; ${z99} and Δ 0→3 h ${fmt(d03)} &lt; ${a.ruleInDelta} → discharge if ECG normal.</div>
+      <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok');
+    if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+    if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+    if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
+    if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+    return;
+  }
+  $('output').innerHTML = line(`<h3>Elevated but stable</h3>
+    <div>Δ 0→3 h &lt; ${a.ruleInDelta}. Consider Cardiology review and outpatient testing.</div>`, 'warn');
+  if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+  if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+  if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
+  if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+  $('output').innerHTML += line(`<div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'info');
+}
+
+/* Troponin time wrappers toggle */
+function toggleTimeWrappers(){
+  const show = $('includeTimes') && $('includeTimes').checked;
+  ['t0TimeWrapper','t1TimeWrapper','t3TimeWrapper'].forEach(id => {
+    const el = $(id);
+    if (el) el.style.display = show ? 'block' : 'none';
+  });
+}
+
+/* Initial UI state */
+function initUI(){
+  updateAssayUI();
+  $('z99Note').textContent = `Current 99th = ${z99()} ng/L`;
+  // Event listener for includeTimes
+  const includeTimesEl = $('includeTimes');
+  if (includeTimesEl) includeTimesEl.addEventListener('change', toggleTimeWrappers);
+  // HEART calculator wiring
+  ['heartHistory','heartECG','heartAge','heartRisk','heartTrop'].forEach(id=>{
+    if ($(id)) $(id).addEventListener('change', heartComputeTotal);
+  });
+  if ($('heartUseBtn')) $('heartUseBtn').addEventListener('click', ()=>{
+    const total = heartComputeTotal();
+    if ($('heart')) {
+      $('heart').value = String(total);
+      // give a small feedback
+      if ($('heartTotalBox')) $('heartTotalBox').className = 'result ok';
+      // re-run compute to refresh any downstream logic that reads HEART
+      // (we only use HEART in discharge messaging, not branching)
+    }
+  });
+  // --- HEART auto troponin input wiring ---
+  if ($('heartTropAuto')) {
+    $('heartTropAuto').addEventListener('change', ()=>{
+      // When toggled on, immediately compute and keep in sync
+      heartAutoTroponinScore();
+    });
+  }
+  // Keep the auto troponin score in sync when key inputs change
+  ['t0','assay','sex'].forEach(id=>{
+    if ($(id)) $(id).addEventListener('input', heartAutoTroponinScore);
+    if ($(id)) $(id).addEventListener('change', heartAutoTroponinScore);
+  });
+  // initialize display
+  heartComputeTotal();
+  // call auto troponin score at load in case the toggle is on
+  heartAutoTroponinScore();
+}
+initUI();
+</script>
+</body>
+</html>
