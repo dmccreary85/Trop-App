@@ -8,29 +8,84 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <style>
   :root{
-    --bg:#0b0f14; --card:#121821; --muted:#9fb0c3; --text:#e8f0f7;
-    --green:#19b36b; --amber:#e6a23c; --red:#f35b5b; --blue:#4aa3ff;
-    --border:#1f2a37; --accent:#6ad1ff;
+    --bg:#0b0f14;
+    --surface:#111;
+    --card:#141b25;
+    --muted:#9fb0c3;
+    --text:#e8f0f7;
+    --green:#19b36b;
+    --amber:#e6a23c;
+    --red:#f35b5b;
+    --blue:#4aa3ff;
+    --border:#2a2a2a;
+    --accent:#6aa9ff;
+    --input-bg:#1c1c1c;
+    --radius-card:12px;
+    --radius-input:8px;
+    --shadow-elev-8:0 12px 24px rgba(0,0,0,0.35);
   }
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);
-    font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
-  header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    font-size:16px;
+    line-height:1.4;
+  }
+  header{
+    padding:16px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
   header h1{margin:0;font-size:18px;font-weight:600}
   .badge{font-size:12px;padding:2px 8px;border:1px solid var(--border);border-radius:999px;color:var(--muted)}
-  main{max-width:980px;margin:0 auto;padding:16px}
-  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
-  .col-12{grid-column:span 12}
-  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-  input[type="number"],select{width:100%;background:#0e141c;border:1px solid var(--border);color:var(--text);
-    padding:10px 12px;border-radius:10px;outline:none}
-  .row{display:flex;gap:12px;flex-wrap:wrap} .row>*{flex:1 1 220px}
-  .help{font-size:12px;color:var(--muted)}
-  .result{border-radius:14px;padding:16px;border:1px solid var(--border);background:#0e141c;margin-bottom:10px}
+  main{
+    max-width:720px;
+    margin:0 auto;
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-card);
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .section-stack{display:flex;flex-direction:column;gap:16px}
+  .field-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .field{display:flex;flex-direction:column;gap:6px}
+  label{display:block;font-size:16px;font-weight:500;color:var(--text);margin-bottom:4px}
+  .helper{font-size:14px;color:var(--muted);margin-bottom:6px}
+  input[type="number"],select,input[type="time"]{
+    width:100%;
+    background:var(--input-bg);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:12px;
+    border-radius:var(--radius-input);
+    outline:2px solid transparent;
+    min-height:44px;
+  }
+  input[type="number"]:focus,select:focus,input[type="time"]:focus{
+    outline-color:var(--accent);
+    outline-offset:2px;
+  }
+  .row{display:flex;gap:16px;flex-wrap:wrap} .row>*{flex:1 1 180px}
+  .help{font-size:14px;color:var(--muted)}
+  .result{border-radius:var(--radius-card);padding:16px;border:1px solid var(--border);background:var(--surface);margin-bottom:10px}
   .ok{border-left:6px solid var(--green)} .warn{border-left:6px solid var(--amber)}
   .bad{border-left:6px solid var(--red)} .info{border-left:6px solid var(--blue)}
-  .btn{appearance:none;border:1px solid var(--border);background:#0e141c;color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer}
-  .btn.primary{background:#122034;border-color:#17314f}
+  .btn{appearance:none;border:1px solid var(--border);background:var(--input-bg);color:var(--text);padding:12px 16px;border-radius:var(--radius-input);cursor:pointer;min-height:44px;font-size:16px}
+  .btn.primary{background:#1e3a5c;border-color:#274a75}
   .toggle {font-size:13px;color:var(--muted);}
   .switch {position: relative;display: inline-block;width: 36px;height: 20px;margin-left:8px;}
   .switch input {opacity: 0;width: 0;height: 0;}
@@ -40,9 +95,24 @@
   .switch input:checked + .slider:before {transform:translateX(16px);}
   .foot{font-size:12px;color:var(--muted)}
   .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted);margin-right:6px}
-  details{border:1px solid var(--border);border-radius:12px;padding:10px 12px}
-  summary{cursor:pointer;color:var(--muted)}
+  details{border:1px solid var(--border);border-radius:var(--radius-card);padding:0;overflow:hidden;transition:max-height .35s ease}
+  summary{cursor:pointer;color:var(--text);list-style:none;display:flex;align-items:center;gap:8px;font-size:16px;font-weight:500;padding:12px 16px;min-height:44px}
+  summary::marker{display:none}
+  summary::before{content:"";display:inline-block;width:12px;height:12px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .3s ease;margin-right:4px}
+  details[open] summary::before{transform:rotate(45deg)}
+  details > .details-body{padding:0 16px 16px}
+  details[open]{max-height:600px}
+  details:not([open]){max-height:52px}
+  .details-body ul{margin:8px 0 0 20px;padding:0}
   code{background:#0b1220;border:1px solid var(--border);padding:0 6px;border-radius:6px}
+  .action-bar{position:sticky;bottom:0;left:0;right:0;display:flex;gap:12px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(20,27,37,0.98);backdrop-filter:blur(12px);box-shadow:var(--shadow-elev-8);z-index:20}
+  .action-bar .btn{flex:1}
+  #output{display:flex;flex-direction:column;gap:16px}
+  @media (min-width:720px){
+    .action-bar{position:static;box-shadow:none;background:transparent;padding:0;gap:16px;justify-content:flex-end}
+    .action-bar .btn{flex:0 0 auto}
+    .action-bar .btn.primary{flex:0 0 auto}
+  }
 </style>
 </head>
 <body>
@@ -50,18 +120,20 @@
   <h1>ACS Troponin Workflow — Alfred</h1>
 </header>
 
-<main class="grid">
-  <section class="card col-12">
-    <div class="row">
-      <div>
-        <label>Assay (don’t mix)</label>
+<main>
+  <section class="card">
+    <div class="section-stack">
+      <div class="field">
+        <label for="assay">Assay</label>
+        <div class="helper">Do not mix assays for a single patient.</div>
         <select id="assay">
           <option value="alinity" selected>Abbott Alinity (lab)</option>
           <option value="poc">POC (Quidel TriageTrue)</option>
         </select>
       </div>
-      <div>
-        <label id="sexLabel">Sex for 99th centile (Alinity: ♂ 25 / ♀ 15)</label>
+      <div class="field">
+        <label id="sexLabel" for="sex">Sex for 99th centile</label>
+        <div class="helper" id="z99Helper">Alinity: male 25 ng/L, female 15 ng/L.</div>
         <select id="sex">
           <option value="male">Male</option>
           <option value="female" selected>Female</option>
@@ -69,32 +141,34 @@
         </select>
         <div class="help" id="z99Note">Current 99th = 15 ng/L</div>
       </div>
-      <div>
-        <label>Symptom timing input</label>
+      <div class="field">
+        <label for="onsetMode">Symptom timing input</label>
+        <div class="helper">Choose how you will capture onset timing.</div>
         <select id="onsetMode">
           <option value="at" selected>Enter time of onset</option>
           <option value="since">Enter time since onset</option>
         </select>
       </div>
-      <div id="onsetSinceWrapper">
-        <label>Time since symptom onset</label>
+      <div class="field" id="onsetSinceWrapper">
+        <label for="onsetHours">Time since symptom onset</label>
+        <div class="helper">Provide hours and minutes if more than 2 hours.</div>
         <div class="row">
           <input type="number" id="onsetHours" placeholder="Hours" min="0" step="1">
           <input type="number" id="onsetMins" placeholder="Minutes" min="0" max="59" step="1">
         </div>
         <div class="help">&gt; 2 h enables single-sample rule-out if 0 h &lt; 4 (Alinity/POC).</div>
       </div>
-      <div id="onsetAtWrapper" style="display:none">
-        <label>Time of symptom onset</label>
+      <div class="field" id="onsetAtWrapper" style="display:none">
+        <label for="onsetAt">Time of symptom onset</label>
+        <div class="helper">The app calculates time since onset automatically.</div>
         <input type="time" id="onsetAt" />
-        <div class="help">The app will calculate time since onset automatically.</div>
       </div>
     </div>
   </section>
 
-  <section class="col-12" id="output"></section>
+  <section id="output"></section>
 
-  <section class="card col-12" id="tropSection" style="display:none">
+  <section class="card" id="tropSection" style="display:none">
     <div class="toggle" style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px;">
       <span>Record sample times</span>
       <label class="switch">
@@ -102,46 +176,47 @@
         <span class="slider round"></span>
       </label>
     </div>
-      <div class="row">
-        <div>
-          <label>0 h hs-Troponin I (ng/L)</label>
+      <div class="field-grid">
+        <div class="field">
+          <label for="t0">0 h hs-troponin I (ng/L)</label>
+          <div class="helper">Enter the arrival sample value.</div>
           <input type="number" id="t0" placeholder="e.g., 3.0" min="0" step="0.1">
           <div class="help small" id="t0TimeWrapper" style="display:none;">
             <input type="time" id="t0Time" /> <span>Sample time (optional)</span>
           </div>
         </div>
-        <div>
-          <label id="t1label">Second sample (1 h from 0 h)</label>
+        <div class="field">
+          <label id="t1label" for="t1">Second sample</label>
+          <div class="helper">Default timing is 1 h from the 0 h sample.</div>
           <input type="number" id="t1" placeholder="leave blank until due" min="0" step="0.1">
           <div class="help small" id="t1TimeWrapper" style="display:none;">
             <input type="time" id="t1Time" /> <span>Sample time (optional)</span>
           </div>
-          <div class="help" id="earlyNote">Alinity early presenters: if onset < 60 min and T0 < 5 → the next sample is at 2 h from time‑0; otherwise 1 h from time‑0.</div>
+          <div class="help" id="earlyNote">Alinity early presenters: if onset &lt; 60 min and T0 &lt; 5 → the next sample is at 2 h from time‑0; otherwise 1 h from time‑0.</div>
         </div>
-        <div>
-          <label>3 h (from 0 h) sample</label>
+        <div class="field">
+          <label for="t3">3 h (from 0 h) sample</label>
+          <div class="helper">Leave blank until the sample is drawn.</div>
           <input type="number" id="t3" placeholder="leave blank until due" min="0" step="0.1">
           <div class="help small" id="t3TimeWrapper" style="display:none;">
             <input type="time" id="t3Time" /> <span>Sample time (optional)</span>
           </div>
         </div>
-        <!-- Compute pathway button and teaching notes checkbox moved above HEART input -->
         <div style="flex-basis:100%;height:0"></div>
-        <div style="margin-top:4px">
-          <button class="btn primary" id="compute" disabled>Compute pathway</button>
-        </div>
-        <div>
-          <label>HEART score (optional)</label>
+        <div class="field">
+          <label for="heart">HEART score (optional)</label>
+          <div class="helper">Manual entry if you already have a total.</div>
           <input type="number" id="heart" placeholder="0–10" min="0" max="10" step="1">
         </div>
       </div>
     <!-- HEART Score Calculator (optional, collapsible) -->
     <details id="heartCalc" style="margin-top:12px">
-      <summary>HEART Score Calculator (optional)</summary>
+      <summary>HEART score calculator (optional)</summary>
       <div class="help" style="margin:8px 0">This follows the Alfred guideline description of the HEART score.</div>
-      <div class="row">
-        <div>
-          <label>History</label>
+      <div class="field-grid">
+        <div class="field">
+          <label for="heartHistory">History</label>
+          <div class="helper">Assess history suspicion level.</div>
           <select id="heartHistory">
             <option value="0">Slightly suspicious (0)</option>
             <option value="1">Moderately suspicious (1)</option>
@@ -149,16 +224,18 @@
           </select>
           <div class="help">High‑risk features: diaphoresis, vomiting, exertional or strong‑emotion pain, radiation to arms, similar to prior MI.</div>
         </div>
-        <div>
-          <label>ECG</label>
+        <div class="field">
+          <label for="heartECG">ECG</label>
+          <div class="helper">Use HEART ECG interpretation.</div>
           <select id="heartECG">
             <option value="0">Normal (0)</option>
             <option value="1">Non‑specific repolarisation disturbance (1)</option>
             <option value="2">Significant ST deviation or new T‑wave inversion (2)</option>
           </select>
         </div>
-        <div>
-          <label>Age</label>
+        <div class="field">
+          <label for="heartAge">Age</label>
+          <div class="helper">Pick the age band for HEART.</div>
           <select id="heartAge">
             <option value="0">&lt; 45 (0)</option>
             <option value="1">45–64 (1)</option>
@@ -166,9 +243,10 @@
           </select>
         </div>
       </div>
-      <div class="row">
-        <div>
-          <label>Risk factors</label>
+      <div class="field-grid">
+        <div class="field">
+          <label for="heartRisk">Risk factors</label>
+          <div class="helper">Count classic cardiac risk factors.</div>
           <select id="heartRisk">
             <option value="0">No known risk factors (0)</option>
             <option value="1">1–2 risk factors (1)</option>
@@ -176,8 +254,9 @@
           </select>
           <div class="help">Risk factors: smoking, diabetes, HTN, hypercholesterolaemia, family history &lt;55 (1st‑degree), obesity (BMI ≥30). Known disease: CAD, stroke, PAD.</div>
         </div>
-        <div>
-          <label>Troponin (initial)</label>
+        <div class="field">
+          <label for="heartTrop">Troponin (initial)</label>
+          <div class="helper">Map the initial troponin to HEART bands.</div>
           <select id="heartTrop">
             <option value="0">Not elevated (0)</option>
             <option value="1">1–3 × ULN (1)</option>
@@ -192,7 +271,7 @@
             </label>
           </div>
         </div>
-        <div>
+        <div class="field">
           <label>&nbsp;</label>
           <button class="btn" id="heartUseBtn" type="button">Use this HEART score</button>
         </div>
@@ -203,9 +282,10 @@
     </details>
   </section>
 
-  <section class="card col-12">
+  <section class="card">
     <details>
-      <summary>Safety rails & reminders</summary>
+      <summary>Safety rails and reminders</summary>
+      <div class="details-body">
       <ul>
         <li>ECG within 10 minutes for suspected ACS; manage STEMI on the dedicated pathway.</li>
         <li>This helper focuses on the hs-Troponin decision algorithm only.</li>
@@ -215,20 +295,23 @@
         <li>Early presenters (Alinity only): if onset &lt; 60 min and 0 h &lt; 5 → 2 h sample; if ≥ 60 min → 1 h sample.</li>
         <li>Unstable angina (ongoing/crescendo pain) → discuss with Cardiology (not suitable for rapid rule-out).</li>
       </ul>
+      </div>
     </details>
   </section>
 
-  <section class="card col-12">
+  <section class="card">
     <details>
-      <summary>References & Resources</summary>
+      <summary>References and resources</summary>
+      <div class="details-body">
       <ul>
         <li><a href="https://app.prompt.org.au/download/135694?code=5b1736c319b4fc04be09b1b3fd8eb25a" target="_blank" rel="noopener">Alfred Health Chest Pain &amp; Suspected ACS Guideline (v5, 2025)</a></li>
         <li><a href="https://academic.oup.com/eurheartj/article/44/38/3720/7243210?login=false" target="_blank" rel="noopener">ESC 2023 ACS Guideline — European Heart Journal</a></li>
       </ul>
+      </div>
     </details>
   </section>
 
-  <section class="col-12 foot">
+  <section class="foot">
     <div class="pill">Rule-out: &gt; 2 h + 0 h &lt; 4, or 0 h &lt; 5 (Alinity) with Δ1h &lt; 2</div>
     <div class="pill">Intermediate: 0 h 5–63 (Alinity) / 5–59 (POC) with Δ small → take 3 h</div>
     <div class="pill">Rule-in: absolute ≥ 64 (Alinity) / ≥ 60 (POC) or Δ ≥ 6 / ≥ 8</div>
@@ -236,6 +319,12 @@
       Implements Alfred ACS guideline v5 (2025). Decision support only; use clinical judgment.
     </div>
   </section>
+
+  <div class="action-bar">
+    <button class="btn" type="button" id="saveTime">Save time</button>
+    <button class="btn primary" type="button" id="compute">Next sample</button>
+  </div>
+
 </main>
 
 <script>
@@ -361,7 +450,7 @@ function minutesSinceOnset(){
 
 function setTropSectionVisibility(){
   const show = hasOnset();
-  $('tropSection').style.display = show ? 'block' : 'none';
+  $('tropSection').style.display = show ? 'flex' : 'none';
   $('compute').disabled = !show;
   if (!show){
     // clear output prompt to nudge the user to enter onset first
@@ -405,6 +494,7 @@ function updateAssayUI(){
   const a = currentAssay();
   $('sexLabel').textContent =
     `Sex for 99th centile (${a===ALINITY ? 'Alinity: ♂ 25 / ♀ 15' : 'POC: ♂ 26 / ♀ 14'})`;
+  if ($('z99Helper')) $('z99Helper').textContent = a===ALINITY ? 'Alinity: male 25 ng/L, female 15 ng/L.' : 'POC: male 26 ng/L, female 14 ng/L.';
   $('z99Note').textContent = `Current 99th = ${z99()} ng/L`;
   // Early note only applicable to Alinity
   const t0 = n($('t0').value);
