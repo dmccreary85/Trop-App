@@ -74,6 +74,7 @@
     border-radius:var(--radius-input);
     outline:2px solid transparent;
     min-height:44px;
+    font-size:16px;
   }
   input[type="number"]:focus,select:focus,input[type="time"]:focus{
     outline-color:var(--accent);
@@ -180,7 +181,7 @@
         <div class="field">
           <label for="t0">0 h hs-troponin I (ng/L)</label>
           <div class="helper">Enter the arrival sample value.</div>
-          <input type="number" id="t0" placeholder="e.g., 3.0" min="0" step="0.1">
+          <input type="number" id="t0" placeholder="e.g., 3.0" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t0TimeWrapper" style="display:none;">
             <input type="time" id="t0Time" /> <span>Sample time (optional)</span>
           </div>
@@ -188,7 +189,7 @@
         <div class="field">
           <label id="t1label" for="t1">Second sample</label>
           <div class="helper">Default timing is 1 h from the 0 h sample.</div>
-          <input type="number" id="t1" placeholder="leave blank until due" min="0" step="0.1">
+          <input type="number" id="t1" placeholder="leave blank until due" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t1TimeWrapper" style="display:none;">
             <input type="time" id="t1Time" /> <span>Sample time (optional)</span>
           </div>
@@ -197,7 +198,7 @@
         <div class="field">
           <label for="t3">3 h (from 0 h) sample</label>
           <div class="helper">Leave blank until the sample is drawn.</div>
-          <input type="number" id="t3" placeholder="leave blank until due" min="0" step="0.1">
+          <input type="number" id="t3" placeholder="leave blank until due" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t3TimeWrapper" style="display:none;">
             <input type="time" id="t3Time" /> <span>Sample time (optional)</span>
           </div>
