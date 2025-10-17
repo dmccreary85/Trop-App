@@ -79,8 +79,8 @@
       <div id="onsetSinceWrapper">
         <label>Time since symptom onset</label>
         <div class="row">
-          <input type="number" id="onsetHours" placeholder="Hours" min="0" step="1">
-          <input type="number" id="onsetMins" placeholder="Minutes" min="0" max="59" step="1">
+          <input type="tel" id="onsetHours" placeholder="Hours" inputmode="numeric" pattern="[0-9]*" data-min="0">
+          <input type="tel" id="onsetMins" placeholder="Minutes" inputmode="numeric" pattern="[0-9]*" data-min="0" data-max="59">
         </div>
         <div class="help">&gt; 2 h enables single-sample rule-out if 0 h &lt; 4 (Alinity/POC).</div>
       </div>
@@ -300,6 +300,23 @@ const POC = {
 const $ = id => document.getElementById(id);
 const n = v => (v===''||v==null) ? null : Number(v);
 const fmt = x => (x==null||isNaN(x))?'—':(Math.round(x*10)/10).toFixed(1);
+
+['onsetHours','onsetMins'].forEach(id => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    const digits = el.value.replace(/\D+/g, '');
+    if (digits !== el.value) el.value = digits;
+    if (digits === '') return;
+    let num = parseInt(el.value, 10);
+    const min = el.dataset.min !== undefined ? Number(el.dataset.min) : null;
+    const max = el.dataset.max !== undefined ? Number(el.dataset.max) : null;
+    if (min !== null && !Number.isNaN(min)) num = Math.max(num, min);
+    if (max !== null && !Number.isNaN(max)) num = Math.min(num, max);
+    const normalized = String(num);
+    if (el.value !== normalized) el.value = normalized;
+  });
+});
 
 // --- Helper functions for sample times and intervals ---
 function getSampleTime(id){
