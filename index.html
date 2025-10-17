@@ -8,7 +8,6 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <style>
   :root{
-    color-scheme: dark;
     --bg:#0b0f14;
     --surface:#111;
     --card:#141b25;
@@ -73,21 +72,14 @@
     color:var(--text);
     padding:12px;
     border-radius:var(--radius-input);
-    outline:none;
-    box-shadow:inset 0 0 0 0 var(--accent);
-    transition:box-shadow .2s ease;
+    outline:2px solid transparent;
     min-height:44px;
     font-size:16px;
-    color-scheme: dark;
   }
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button{
-    margin:0;
+  input[type="number"]:focus,select:focus,input[type="time"]:focus{
+    outline-color:var(--accent);
+    outline-offset:2px;
   }
-  input[type="time"]::-webkit-calendar-picker-indicator{
-    filter:invert(1);
-  }
-  input[type="number"]:focus,select:focus,input[type="time"]:focus{box-shadow:inset 0 0 0 2px var(--accent);}
   .row{display:flex;gap:16px;flex-wrap:wrap} .row>*{flex:1 1 180px}
   .help{font-size:14px;color:var(--muted)}
   .result{border-radius:var(--radius-card);padding:16px;border:1px solid var(--border);background:var(--surface);margin-bottom:10px}
