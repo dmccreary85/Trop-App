@@ -472,11 +472,11 @@ function setTropSectionVisibility(){
 
 function updateOnsetModeUI(){
   if(onsetMode() === 'since'){
-    $('onsetSinceWrapper').style.display = 'block';
+    $('onsetSinceWrapper').style.display = 'flex';
     $('onsetAtWrapper').style.display = 'none';
   } else {
     $('onsetSinceWrapper').style.display = 'none';
-    $('onsetAtWrapper').style.display = 'block';
+    $('onsetAtWrapper').style.display = 'flex';
   }
   setTropSectionVisibility();
 }
