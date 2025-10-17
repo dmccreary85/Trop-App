@@ -154,8 +154,8 @@
         <label for="onsetHours">Time since symptom onset</label>
         <div class="helper">Provide hours and minutes if more than 2 hours.</div>
         <div class="row">
-          <input type="number" id="onsetHours" placeholder="Hours" min="0" step="1">
-          <input type="number" id="onsetMins" placeholder="Minutes" min="0" max="59" step="1">
+          <input type="number" id="onsetHours" placeholder="Hours" min="0" step="1" inputmode="numeric" pattern="[0-9]*">
+          <input type="number" id="onsetMins" placeholder="Minutes" min="0" max="59" step="1" inputmode="numeric" pattern="[0-9]*">
         </div>
         <div class="help">&gt; 2 h enables single-sample rule-out if 0 h &lt; 4 (Alinity/POC).</div>
       </div>
