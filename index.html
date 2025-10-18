@@ -47,6 +47,7 @@
     max-width:720px;
     margin:0 auto;
     padding:16px;
+    padding-bottom:calc(200px + env(safe-area-inset-bottom));
     display:flex;
     flex-direction:column;
     gap:24px;
@@ -106,14 +107,9 @@
   details:not([open]){max-height:52px;overflow:hidden}
   .details-body ul{margin:8px 0 0 20px;padding:0}
   code{background:#0b1220;border:1px solid var(--border);padding:0 6px;border-radius:6px}
-  .action-bar{position:sticky;bottom:0;left:0;right:0;display:flex;gap:12px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(20,27,37,0.98);backdrop-filter:blur(12px);box-shadow:var(--shadow-elev-8);z-index:20}
-  .action-bar .btn{flex:1}
-  #output{display:flex;flex-direction:column;gap:16px}
-  @media (min-width:720px){
-    .action-bar{position:static;box-shadow:none;background:transparent;padding:0;gap:16px;justify-content:flex-end}
-    .action-bar .btn{flex:0 0 auto}
-    .action-bar .btn.primary{flex:0 0 auto}
-  }
+  #adviceBar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(20,27,37,0.98);backdrop-filter:blur(12px);box-shadow:var(--shadow-elev-8);border-top:1px solid var(--border);z-index:30}
+  #adviceBar .advice-inner{max-width:720px;margin:0 auto}
+  #output{display:flex;flex-direction:column;gap:16px;max-height:50vh;overflow-y:auto;padding-right:4px}
 </style>
 </head>
 <body>
@@ -166,8 +162,6 @@
       </div>
     </div>
   </section>
-
-  <section id="output"></section>
 
   <section class="card" id="tropSection" style="display:none">
     <div class="toggle" style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px;">
@@ -321,12 +315,13 @@
     </div>
   </section>
 
-  <div class="action-bar">
-    <button class="btn" type="button" id="saveTime">Save time</button>
-    <button class="btn primary" type="button" id="compute">Next sample</button>
-  </div>
-
 </main>
+
+<div id="adviceBar">
+  <div class="advice-inner">
+    <section id="output"></section>
+  </div>
+</div>
 
 <script>
 // --- HEART Score Calculator logic ---
@@ -452,7 +447,6 @@ function minutesSinceOnset(){
 function setTropSectionVisibility(){
   const show = hasOnset();
   $('tropSection').style.display = show ? 'flex' : 'none';
-  $('compute').disabled = !show;
   if (!show){
     // clear output prompt to nudge the user to enter onset first
     $('output').innerHTML = line(
@@ -461,12 +455,8 @@ function setTropSectionVisibility(){
       'info'
     );
   } else {
-    // once onset is provided, show step‑wise guidance if T0 is not yet entered
-    const t0 = n($('t0').value);
-    if (t0===null){
-      // trigger the compute to show the “Step 1 — Take 0 h troponin now” panel
-      document.getElementById('compute').click();
-    }
+    // once onset is provided, show step‑wise guidance as data arrives
+    computeAdvice();
   }
 }
 
@@ -505,16 +495,35 @@ function updateAssayUI(){
   $('t1label').textContent = (a===ALINITY && t0!==null && t0<5 && onsetMin<60)
     ? 'Second sample (2 h from 0 h)'
     : 'Second sample (1 h from 0 h)';
+  computeAdvice();
 }
-['assay','sex','onsetHours','onsetMins','t0'].forEach(id => $(id).addEventListener('input', updateAssayUI));
-['onsetHours','onsetMins'].forEach(id => $(id).addEventListener('input', setTropSectionVisibility));
-$('onsetMode').addEventListener('change', updateOnsetModeUI);
-$('onsetAt').addEventListener('input', setTropSectionVisibility);
+['assay','sex','onsetHours','onsetMins','t0'].forEach(id => {
+  const el = $(id);
+  if (el) {
+    el.addEventListener('input', updateAssayUI);
+    el.addEventListener('change', updateAssayUI);
+  }
+});
+['onsetHours','onsetMins'].forEach(id => {
+  const el = $(id);
+  if (el) {
+    el.addEventListener('input', setTropSectionVisibility);
+    el.addEventListener('change', ()=>{
+      setTropSectionVisibility();
+      computeAdvice();
+    });
+  }
+});
+if ($('onsetMode')) $('onsetMode').addEventListener('change', updateOnsetModeUI);
+if ($('onsetAt')) {
+  $('onsetAt').addEventListener('input', setTropSectionVisibility);
+  $('onsetAt').addEventListener('change', computeAdvice);
+}
 // run once on load
 updateOnsetModeUI();
 
 /* Compute */
-$('compute').addEventListener('click', ()=>{
+function computeAdvice(){
   if (!hasOnset()){
     $('output').innerHTML = line(
       `<h3>Enter ${onsetMode()==='at'?'time of symptom onset':'time since symptom onset'}</h3>`+
@@ -528,7 +537,6 @@ $('compute').addEventListener('click', ()=>{
   const onsetMin = minutesSinceOnset();
   const t0 = n($('t0').value), t1=n($('t1').value), t3=n($('t3').value);
   const z = z99();
-  const heart = n($('heart').value);
 
   // --- Read sample times and intervals ---
   const t0Time = getSampleTime('t0Time');
@@ -686,6 +694,22 @@ $('compute').addEventListener('click', ()=>{
   }
 
   $('output').innerHTML = line(`<h3>Needs more information</h3><div>Enter due samples or review clinical status.</div>`,'info');
+}
+
+['t0','t1','t3'].forEach(id => {
+  const el = $(id);
+  if (el) {
+    el.addEventListener('input', computeAdvice);
+    el.addEventListener('change', computeAdvice);
+    el.addEventListener('blur', computeAdvice);
+  }
+});
+['t0Time','t1Time','t3Time'].forEach(id => {
+  const el = $(id);
+  if (el) {
+    el.addEventListener('change', computeAdvice);
+    el.addEventListener('input', computeAdvice);
+  }
 });
 
 function eval3h(a, t0, t3, z99, t0Time, t1Time, t3Time, elapsed1, elapsed3){
@@ -746,6 +770,7 @@ function initUI(){
       if ($('heartTotalBox')) $('heartTotalBox').className = 'result ok';
       // re-run compute to refresh any downstream logic that reads HEART
       // (we only use HEART in discharge messaging, not branching)
+      computeAdvice();
     }
   });
   // --- HEART auto troponin input wiring ---
@@ -764,8 +789,13 @@ function initUI(){
   heartComputeTotal();
   // call auto troponin score at load in case the toggle is on
   heartAutoTroponinScore();
+  if ($('heart')) {
+    $('heart').addEventListener('change', computeAdvice);
+    $('heart').addEventListener('input', computeAdvice);
+  }
 }
 initUI();
+computeAdvice();
 </script>
 </body>
 </html>
