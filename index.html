@@ -106,14 +106,22 @@
   details:not([open]){max-height:52px;overflow:hidden}
   .details-body ul{margin:8px 0 0 20px;padding:0}
   code{background:#0b1220;border:1px solid var(--border);padding:0 6px;border-radius:6px}
-  .action-bar{position:sticky;bottom:0;left:0;right:0;display:flex;gap:12px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(20,27,37,0.98);backdrop-filter:blur(12px);box-shadow:var(--shadow-elev-8);z-index:20}
-  .action-bar .btn{flex:1}
-  #output{display:flex;flex-direction:column;gap:16px}
-  @media (min-width:720px){
-    .action-bar{position:static;box-shadow:none;background:transparent;padding:0;gap:16px;justify-content:flex-end}
-    .action-bar .btn{flex:0 0 auto}
-    .action-bar .btn.primary{flex:0 0 auto}
+  .advice-bar{
+    position:sticky;
+    bottom:0;
+    left:0;
+    right:0;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    background:rgba(20,27,37,0.95);
+    backdrop-filter:blur(12px);
+    box-shadow:var(--shadow-elev-8);
+    border-top:1px solid var(--border);
+    display:flex;
+    justify-content:center;
+    z-index:20;
   }
+  #output{display:flex;flex-direction:column;gap:12px;width:100%;max-width:720px}
+  main{padding-bottom:160px}
 </style>
 </head>
 <body>
@@ -166,9 +174,6 @@
       </div>
     </div>
   </section>
-
-  <section id="output"></section>
-
   <section class="card" id="tropSection" style="display:none">
     <div class="toggle" style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px;">
       <span>Record sample times</span>
@@ -321,12 +326,11 @@
     </div>
   </section>
 
-  <div class="action-bar">
-    <button class="btn" type="button" id="saveTime">Save time</button>
-    <button class="btn primary" type="button" id="compute">Next sample</button>
-  </div>
-
 </main>
+
+<div class="advice-bar">
+  <div id="output"></div>
+</div>
 
 <script>
 // --- HEART Score Calculator logic ---
@@ -359,6 +363,7 @@ function heartAutoTroponinScore(){
   if ($('heartTrop')) $('heartTrop').value = String(score);
   // refresh total
   heartComputeTotal();
+  computeAdvice();
 }
 /* PWA registration */
 if ('serviceWorker' in navigator) {
@@ -452,22 +457,7 @@ function minutesSinceOnset(){
 function setTropSectionVisibility(){
   const show = hasOnset();
   $('tropSection').style.display = show ? 'flex' : 'none';
-  $('compute').disabled = !show;
-  if (!show){
-    // clear output prompt to nudge the user to enter onset first
-    $('output').innerHTML = line(
-      `<h3>Enter ${onsetMode()==='at'?'time of symptom onset':'time since symptom onset'}</h3>`+
-      `<div class="help">${onsetMode()==='at'?'Add the clock time of onset':'Add hours and/or minutes'} to continue. The app will then guide sampling times and rule‑out logic.</div>`,
-      'info'
-    );
-  } else {
-    // once onset is provided, show step‑wise guidance if T0 is not yet entered
-    const t0 = n($('t0').value);
-    if (t0===null){
-      // trigger the compute to show the “Step 1 — Take 0 h troponin now” panel
-      document.getElementById('compute').click();
-    }
-  }
+  computeAdvice();
 }
 
 function updateOnsetModeUI(){
@@ -505,16 +495,21 @@ function updateAssayUI(){
   $('t1label').textContent = (a===ALINITY && t0!==null && t0<5 && onsetMin<60)
     ? 'Second sample (2 h from 0 h)'
     : 'Second sample (1 h from 0 h)';
+  computeAdvice();
 }
 ['assay','sex','onsetHours','onsetMins','t0'].forEach(id => $(id).addEventListener('input', updateAssayUI));
 ['onsetHours','onsetMins'].forEach(id => $(id).addEventListener('input', setTropSectionVisibility));
 $('onsetMode').addEventListener('change', updateOnsetModeUI);
 $('onsetAt').addEventListener('input', setTropSectionVisibility);
+['t0','t1','t3','t0Time','t1Time','t3Time','heart'].forEach(id=>{
+  const el = $(id);
+  if (el) el.addEventListener('change', computeAdvice);
+});
 // run once on load
 updateOnsetModeUI();
 
 /* Compute */
-$('compute').addEventListener('click', ()=>{
+function computeAdvice(){
   if (!hasOnset()){
     $('output').innerHTML = line(
       `<h3>Enter ${onsetMode()==='at'?'time of symptom onset':'time since symptom onset'}</h3>`+
@@ -686,7 +681,7 @@ $('compute').addEventListener('click', ()=>{
   }
 
   $('output').innerHTML = line(`<h3>Needs more information</h3><div>Enter due samples or review clinical status.</div>`,'info');
-});
+}
 
 function eval3h(a, t0, t3, z99, t0Time, t1Time, t3Time, elapsed1, elapsed3){
   const d03 = Math.abs(t3 - t0);
@@ -746,6 +741,7 @@ function initUI(){
       if ($('heartTotalBox')) $('heartTotalBox').className = 'result ok';
       // re-run compute to refresh any downstream logic that reads HEART
       // (we only use HEART in discharge messaging, not branching)
+      computeAdvice();
     }
   });
   // --- HEART auto troponin input wiring ---
