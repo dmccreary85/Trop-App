@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trop-app-v1';
+const CACHE_NAME = 'trop-app-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -8,9 +8,25 @@ const ASSETS = [
   './icons/icon-512.png'
 ];
 
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.all(ASSETS.map(async asset => {
+        try {
+          const request = new Request(asset, { cache: 'reload' });
+          const response = await fetch(request);
+          await cache.put(request, response.clone());
+        } catch (err) {
+          console.warn('Failed to precache asset', asset, err);
+        }
+      }))
+    )
   );
   self.skipWaiting();
 });
@@ -35,6 +51,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) {
@@ -46,7 +70,7 @@ self.addEventListener('fetch', event => {
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
         return response;
       });
-    }).catch(() => caches.match('./index.html'))
+    })
   );
 });
 

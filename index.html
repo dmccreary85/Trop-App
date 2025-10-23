@@ -106,22 +106,29 @@
   details:not([open]){max-height:52px;overflow:hidden}
   .details-body ul{margin:8px 0 0 20px;padding:0}
   code{background:#0b1220;border:1px solid var(--border);padding:0 6px;border-radius:6px}
-  .advice-bar{
+  #output{display:flex;flex-direction:column;gap:12px;width:100%}
+  .recommendation-card{
     position:sticky;
-    bottom:0;
-    left:0;
-    right:0;
-    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    bottom:16px;
     background:rgba(20,27,37,0.95);
-    backdrop-filter:blur(12px);
+    border:1px solid var(--border);
+    border-radius:var(--radius-card);
     box-shadow:var(--shadow-elev-8);
-    border-top:1px solid var(--border);
+    backdrop-filter:blur(12px);
+    padding:16px;
     display:flex;
-    justify-content:center;
-    z-index:20;
+    flex-direction:column;
+    gap:12px;
+    z-index:10;
+    width:100%;
+    margin:0 0 16px;
+    padding-bottom:calc(16px + env(safe-area-inset-bottom));
   }
-  #output{display:flex;flex-direction:column;gap:12px;width:100%;max-width:720px}
-  main{padding-bottom:160px}
+  .recommendation-card h2{
+    margin:0;
+    font-size:18px;
+    font-weight:600;
+  }
 </style>
 </head>
 <body>
@@ -317,6 +324,11 @@
     </details>
   </section>
 
+  <section class="recommendation-card" id="recommendation">
+    <h2>Recommendation</h2>
+    <div id="output"></div>
+  </section>
+
   <section class="foot">
     <div class="pill">Rule-out: &gt; 2 h + 0 h &lt; 4, or 0 h &lt; 5 (Alinity) with Δ1h &lt; 2</div>
     <div class="pill">Intermediate: 0 h 5–63 (Alinity) / 5–59 (POC) with Δ small → take 3 h</div>
@@ -327,10 +339,6 @@
   </section>
 
 </main>
-
-<div class="advice-bar">
-  <div id="output"></div>
-</div>
 
 <script>
 // --- HEART Score Calculator logic ---
@@ -366,8 +374,36 @@ function heartAutoTroponinScore(){
   computeAdvice();
 }
 /* PWA registration */
+const SW_VERSION = 'v3';
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(console.error);
+  const swUrl = `./sw.js?ver=${SW_VERSION}`;
+  navigator.serviceWorker.register(swUrl).then(registration => {
+    const maybeActivate = worker => {
+      if (!worker) return;
+      worker.addEventListener('statechange', () => {
+        if (worker.state === 'installed') {
+          worker.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    };
+
+    maybeActivate(registration.installing);
+
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+
+    registration.addEventListener('updatefound', () => {
+      maybeActivate(registration.installing);
+    });
+  }).catch(console.error);
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
 }
 
 /* Assay constants */
@@ -503,7 +539,8 @@ $('onsetMode').addEventListener('change', updateOnsetModeUI);
 $('onsetAt').addEventListener('input', setTropSectionVisibility);
 ['t0','t1','t3','t0Time','t1Time','t3Time','heart'].forEach(id=>{
   const el = $(id);
-  if (el) el.addEventListener('change', computeAdvice);
+  if (!el) return;
+  ['change','input'].forEach(evt=>el.addEventListener(evt, computeAdvice));
 });
 // run once on load
 updateOnsetModeUI();
