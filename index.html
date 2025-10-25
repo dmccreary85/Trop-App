@@ -182,8 +182,8 @@
       </div>
       <div class="field" id="onsetAtWrapper" style="display:none">
         <label for="onsetAt">Time of symptom onset</label>
-        <div class="helper">The app calculates time since onset automatically.</div>
-        <input type="time" id="onsetAt" />
+        <div class="helper">Use 24-hour clock (e.g., 14:30). The app calculates time since onset automatically.</div>
+        <input type="time" id="onsetAt" lang="en-GB" />
       </div>
     </div>
   </section>
@@ -201,7 +201,7 @@
           <div class="helper">Enter the arrival sample value.</div>
           <input type="number" id="t0" placeholder="e.g., 3.0" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t0TimeWrapper" style="display:none;">
-            <input type="time" id="t0Time" /> <span>Sample time (optional)</span>
+            <input type="time" id="t0Time" lang="en-GB" /> <span>Sample time (optional)</span>
           </div>
         </div>
         <div class="field">
@@ -209,7 +209,7 @@
           <div class="helper">Default timing is 1 h from the 0 h sample.</div>
           <input type="number" id="t1" placeholder="leave blank until due" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t1TimeWrapper" style="display:none;">
-            <input type="time" id="t1Time" /> <span>Sample time (optional)</span>
+            <input type="time" id="t1Time" lang="en-GB" /> <span>Sample time (optional)</span>
           </div>
           <div class="help" id="earlyNote">Alinity early presenters: if onset &lt; 60 min and T0 &lt; 5 → the next sample is at 2 h from time‑0; otherwise 1 h from time‑0.</div>
         </div>
@@ -218,7 +218,7 @@
           <div class="helper">Leave blank until the sample is drawn.</div>
           <input type="number" id="t3" placeholder="leave blank until due" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t3TimeWrapper" style="display:none;">
-            <input type="time" id="t3Time" /> <span>Sample time (optional)</span>
+            <input type="time" id="t3Time" lang="en-GB" /> <span>Sample time (optional)</span>
           </div>
         </div>
       </div>
