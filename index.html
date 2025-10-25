@@ -108,9 +108,7 @@
   code{background:#0b1220;border:1px solid var(--border);padding:0 6px;border-radius:6px}
   #output{display:flex;flex-direction:column;gap:12px;width:100%}
   .recommendation-card{
-    position:fixed;
-    left:50%;
-    transform:translateX(-50%);
+    position:sticky;
     bottom:16px;
     background:rgba(20,27,37,0.95);
     border:1px solid var(--border);
@@ -121,9 +119,9 @@
     display:flex;
     flex-direction:column;
     gap:12px;
-    z-index:20;
-    width:min(720px, calc(100% - 32px));
-    margin:0;
+    z-index:10;
+    width:100%;
+    margin:0 0 16px;
     padding-bottom:calc(16px + env(safe-area-inset-bottom));
   }
   .recommendation-card h2{
@@ -330,6 +328,15 @@
   <section class="recommendation-card" id="recommendation">
     <h2>Recommendation</h2>
     <div id="output"></div>
+  </section>
+
+  <section class="foot">
+    <div class="pill">Rule-out: &gt; 2 h + 0 h &lt; 4, or 0 h &lt; 5 (Alinity) with Δ1h &lt; 2</div>
+    <div class="pill">Intermediate: 0 h 5–63 (Alinity) / 5–59 (POC) with Δ small → take 3 h</div>
+    <div class="pill">Rule-in: absolute ≥ 64 (Alinity) / ≥ 60 (POC) or Δ ≥ 6 / ≥ 8</div>
+    <div class="help" style="margin-top:8px">
+      Implements Alfred ACS guideline v5 (2025). Decision support only; use clinical judgment.
+    </div>
   </section>
 
 </main>
