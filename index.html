@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ACS Troponin Workflow — Alfred (Alinity + POC)</title>
+<title>Suspected ACS Troponin Workflow (Alinity + POC)</title>
 <meta name="theme-color" content="#0b0f14" />
 <link rel="manifest" href="manifest.webmanifest" />
 <style>
@@ -42,6 +42,7 @@
     flex-wrap:wrap;
   }
   header h1{margin:0;font-size:18px;font-weight:600}
+  .header-note{flex-basis:100%;font-size:13px;color:var(--muted)}
   .badge{font-size:12px;padding:2px 8px;border:1px solid var(--border);border-radius:999px;color:var(--muted)}
   main{
     max-width:720px;
@@ -50,6 +51,7 @@
     display:flex;
     flex-direction:column;
     gap:24px;
+    padding-bottom:calc(240px + env(safe-area-inset-bottom));
   }
   .card{
     background:var(--card);
@@ -94,8 +96,6 @@
   .slider:before {position: absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background-color:white;transition:.3s;border-radius:50%;}
   .switch input:checked + .slider {background-color: var(--green);}
   .switch input:checked + .slider:before {transform:translateX(16px);}
-  .foot{font-size:12px;color:var(--muted)}
-  .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted);margin-right:6px}
   details{border:1px solid var(--border);border-radius:var(--radius-card);padding:0;transition:max-height .35s ease}
   summary{cursor:pointer;color:var(--text);list-style:none;display:flex;align-items:center;gap:8px;font-size:16px;font-weight:500;padding:12px 16px;min-height:44px}
   summary::marker{display:none}
@@ -106,27 +106,37 @@
   details:not([open]){max-height:52px;overflow:hidden}
   .details-body ul{margin:8px 0 0 20px;padding:0}
   code{background:#0b1220;border:1px solid var(--border);padding:0 6px;border-radius:6px}
-  .advice-bar{
-    position:sticky;
-    bottom:0;
-    left:0;
-    right:0;
-    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  #output{display:flex;flex-direction:column;gap:12px;width:100%}
+  .recommendation-card{
+    position:fixed;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:16px;
     background:rgba(20,27,37,0.95);
-    backdrop-filter:blur(12px);
+    border:1px solid var(--border);
+    border-radius:var(--radius-card);
     box-shadow:var(--shadow-elev-8);
-    border-top:1px solid var(--border);
+    backdrop-filter:blur(12px);
+    padding:16px;
     display:flex;
-    justify-content:center;
+    flex-direction:column;
+    gap:12px;
     z-index:20;
+    width:min(720px, calc(100% - 32px));
+    margin:0;
+    padding-bottom:calc(16px + env(safe-area-inset-bottom));
   }
-  #output{display:flex;flex-direction:column;gap:12px;width:100%;max-width:720px}
-  main{padding-bottom:160px}
+  .recommendation-card h2{
+    margin:0;
+    font-size:18px;
+    font-weight:600;
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>ACS Troponin Workflow — Alfred</h1>
+  <h1>Suspected ACS Troponin Workflow</h1>
+  <div class="header-note">Implements Alfred ACS guideline v5 (2025). Decision support only; use clinical judgment.</div>
 </header>
 
 <main>
@@ -317,20 +327,12 @@
     </details>
   </section>
 
-  <section class="foot">
-    <div class="pill">Rule-out: &gt; 2 h + 0 h &lt; 4, or 0 h &lt; 5 (Alinity) with Δ1h &lt; 2</div>
-    <div class="pill">Intermediate: 0 h 5–63 (Alinity) / 5–59 (POC) with Δ small → take 3 h</div>
-    <div class="pill">Rule-in: absolute ≥ 64 (Alinity) / ≥ 60 (POC) or Δ ≥ 6 / ≥ 8</div>
-    <div class="help" style="margin-top:8px">
-      Implements Alfred ACS guideline v5 (2025). Decision support only; use clinical judgment.
-    </div>
+  <section class="recommendation-card" id="recommendation">
+    <h2>Recommendation</h2>
+    <div id="output"></div>
   </section>
 
 </main>
-
-<div class="advice-bar">
-  <div id="output"></div>
-</div>
 
 <script>
 // --- HEART Score Calculator logic ---
@@ -366,8 +368,36 @@ function heartAutoTroponinScore(){
   computeAdvice();
 }
 /* PWA registration */
+const SW_VERSION = 'v3';
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(console.error);
+  const swUrl = `./sw.js?ver=${SW_VERSION}`;
+  navigator.serviceWorker.register(swUrl).then(registration => {
+    const maybeActivate = worker => {
+      if (!worker) return;
+      worker.addEventListener('statechange', () => {
+        if (worker.state === 'installed') {
+          worker.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    };
+
+    maybeActivate(registration.installing);
+
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+
+    registration.addEventListener('updatefound', () => {
+      maybeActivate(registration.installing);
+    });
+  }).catch(console.error);
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
 }
 
 /* Assay constants */
@@ -503,7 +533,8 @@ $('onsetMode').addEventListener('change', updateOnsetModeUI);
 $('onsetAt').addEventListener('input', setTropSectionVisibility);
 ['t0','t1','t3','t0Time','t1Time','t3Time','heart'].forEach(id=>{
   const el = $(id);
-  if (el) el.addEventListener('change', computeAdvice);
+  if (!el) return;
+  ['change','input'].forEach(evt=>el.addEventListener(evt, computeAdvice));
 });
 // run once on load
 updateOnsetModeUI();
