@@ -79,6 +79,17 @@
     min-height:44px;
     font-size:16px;
   }
+  .time-input{
+    appearance:none;
+    -webkit-appearance:none;
+    -moz-appearance:textfield;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:0.02em;
+  }
+  .time-input::placeholder{
+    color:var(--muted);
+    opacity:0.75;
+  }
   input[type="number"]:focus,select:focus,.time-input:focus{
     outline-color:var(--accent);
     outline-offset:2px;
@@ -195,6 +206,7 @@
       <div class="field" id="onsetAtWrapper" style="display:none">
         <label for="onsetAt">Time of symptom onset</label>
         <div class="helper">Use 24-hour clock (e.g., 14:30). The app calculates time since onset automatically.</div>
+        <input class="time-input" type="text" id="onsetAt" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" />
         <input type="time" id="onsetAt" lang="en-GB" />
       </div>
     </div>
@@ -213,6 +225,7 @@
           <div class="helper">Enter the arrival sample value.</div>
           <input type="number" id="t0" placeholder="e.g., 3.0" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t0TimeWrapper" style="display:none;">
+            <input class="time-input" type="text" id="t0Time" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" /> <span>Sample time (optional)</span>
             <input type="time" id="t0Time" lang="en-GB" /> <span>Sample time (optional)</span>
           </div>
         </div>
@@ -221,6 +234,7 @@
           <div class="helper">Default timing is 1 h from the 0 h sample.</div>
           <input type="number" id="t1" placeholder="leave blank until due" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t1TimeWrapper" style="display:none;">
+            <input class="time-input" type="text" id="t1Time" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" /> <span>Sample time (optional)</span>
             <input type="time" id="t1Time" lang="en-GB" /> <span>Sample time (optional)</span>
           </div>
           <div class="help" id="earlyNote">Alinity early presenters: if onset &lt; 60 min and T0 &lt; 5 → the next sample is at 2 h from time‑0; otherwise 1 h from time‑0.</div>
@@ -230,6 +244,7 @@
           <div class="helper">Leave blank until the sample is drawn.</div>
           <input type="number" id="t3" placeholder="leave blank until due" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t3TimeWrapper" style="display:none;">
+            <input class="time-input" type="text" id="t3Time" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" /> <span>Sample time (optional)</span>
             <input type="time" id="t3Time" lang="en-GB" /> <span>Sample time (optional)</span>
           </div>
         </div>
@@ -497,15 +512,55 @@ function normalizeTimeField(el){
   }
 }
 
+function autoFormatTimeDraft(el){
+  if(!el) return;
+  const digits = el.value.replace(/[^0-9]/g, '').slice(0, 4);
+  if(!digits){
+    el.value = '';
+    return;
+  }
+  if(digits.length <= 2){
+    el.value = digits;
+    return;
+  }
+  const hours = digits.slice(0, 2);
+  const minutes = digits.slice(2);
+  el.value = minutes ? `${hours}:${minutes}` : `${hours}:`;
+}
+
 function attachTimeInputHandlers(){
   ['onsetAt','t0Time','t1Time','t3Time'].forEach(id => {
     const el = $(id);
     if(!el) return;
+    el.addEventListener('keydown', restrictTimeKeydown);
+    el.addEventListener('paste', restrictTimePaste);
+    el.addEventListener('input', () => {
+      autoFormatTimeDraft(el);
+      el.setCustomValidity('');
+    });
+    el.addEventListener('blur', () => normalizeTimeField(el));
+    el.addEventListener('change', () => normalizeTimeField(el));
     el.addEventListener('blur', () => normalizeTimeField(el));
     el.addEventListener('change', () => normalizeTimeField(el));
     el.addEventListener('input', () => el.setCustomValidity(''));
     normalizeTimeField(el);
   });
+}
+
+function restrictTimeKeydown(event){
+  const allowedControlKeys = [
+    'Backspace','Tab','ArrowLeft','ArrowRight','Delete','Home','End','Enter'
+  ];
+  if(allowedControlKeys.includes(event.key)) return;
+  if(event.key && event.key.length === 1 && /[0-9:]/.test(event.key)) return;
+  event.preventDefault();
+}
+
+function restrictTimePaste(event){
+  const data = (event.clipboardData || window.clipboardData).getData('text');
+  if(!data) return;
+  if(/^[0-9:\s]+$/.test(data)) return;
+  event.preventDefault();
 }
 
 // --- Helper functions for sample times and intervals ---
