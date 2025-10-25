@@ -21,7 +21,7 @@ self.addEventListener('install', event => {
         try {
           const request = new Request(asset, { cache: 'reload' });
           const response = await fetch(request);
-          await cache.put(request, response.clone());
+          await cache.put(asset, response.clone());
         } catch (err) {
           console.warn('Failed to precache asset', asset, err);
         }
@@ -32,11 +32,15 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))
-    ).then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
+    await self.clients.claim();
+    const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clientList) {
+      client.postMessage({ type: 'SW_UPDATED' });
+    }
+  })());
 });
 
 self.addEventListener('fetch', event => {
@@ -78,4 +82,3 @@ self.addEventListener('fetch', event => {
     })
   );
 });
-
