@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ACS Troponin Workflow — Alfred (Alinity + POC)</title>
+<title>Suspected ACS Troponin Workflow (Alinity + POC)</title>
 <meta name="theme-color" content="#0b0f14" />
 <link rel="manifest" href="manifest.webmanifest" />
 <style>
@@ -42,6 +42,7 @@
     flex-wrap:wrap;
   }
   header h1{margin:0;font-size:18px;font-weight:600}
+  .header-note{flex-basis:100%;font-size:13px;color:var(--muted)}
   .badge{font-size:12px;padding:2px 8px;border:1px solid var(--border);border-radius:999px;color:var(--muted)}
   main{
     max-width:720px;
@@ -50,6 +51,7 @@
     display:flex;
     flex-direction:column;
     gap:24px;
+    padding-bottom:calc(240px + env(safe-area-inset-bottom));
   }
   .card{
     background:var(--card);
@@ -94,8 +96,6 @@
   .slider:before {position: absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background-color:white;transition:.3s;border-radius:50%;}
   .switch input:checked + .slider {background-color: var(--green);}
   .switch input:checked + .slider:before {transform:translateX(16px);}
-  .foot{font-size:12px;color:var(--muted)}
-  .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted);margin-right:6px}
   details{border:1px solid var(--border);border-radius:var(--radius-card);padding:0;transition:max-height .35s ease}
   summary{cursor:pointer;color:var(--text);list-style:none;display:flex;align-items:center;gap:8px;font-size:16px;font-weight:500;padding:12px 16px;min-height:44px}
   summary::marker{display:none}
@@ -133,7 +133,8 @@
 </head>
 <body>
 <header>
-  <h1>ACS Troponin Workflow — Alfred</h1>
+  <h1>Suspected ACS Troponin Workflow</h1>
+  <div class="header-note">Implements Alfred ACS guideline v5 (2025). Decision support only; use clinical judgment.</div>
 </header>
 
 <main>
@@ -374,8 +375,36 @@ function heartAutoTroponinScore(){
   computeAdvice();
 }
 /* PWA registration */
+const SW_VERSION = 'v3';
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(console.error);
+  const swUrl = `./sw.js?ver=${SW_VERSION}`;
+  navigator.serviceWorker.register(swUrl).then(registration => {
+    const maybeActivate = worker => {
+      if (!worker) return;
+      worker.addEventListener('statechange', () => {
+        if (worker.state === 'installed') {
+          worker.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    };
+
+    maybeActivate(registration.installing);
+
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+
+    registration.addEventListener('updatefound', () => {
+      maybeActivate(registration.installing);
+    });
+  }).catch(console.error);
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
 }
 
 /* Assay constants */
