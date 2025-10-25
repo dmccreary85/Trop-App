@@ -8,9 +8,25 @@ const ASSETS = [
   './icons/icon-512.png'
 ];
 
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.all(ASSETS.map(async asset => {
+        try {
+          const request = new Request(asset, { cache: 'reload' });
+          const response = await fetch(request);
+          await cache.put(request, response.clone());
+        } catch (err) {
+          console.warn('Failed to precache asset', asset, err);
+        }
+      }))
+    )
   );
   self.skipWaiting();
 });

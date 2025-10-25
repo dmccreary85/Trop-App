@@ -374,8 +374,36 @@ function heartAutoTroponinScore(){
   computeAdvice();
 }
 /* PWA registration */
+const SW_VERSION = 'v3';
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(console.error);
+  const swUrl = `./sw.js?ver=${SW_VERSION}`;
+  navigator.serviceWorker.register(swUrl).then(registration => {
+    const maybeActivate = worker => {
+      if (!worker) return;
+      worker.addEventListener('statechange', () => {
+        if (worker.state === 'installed') {
+          worker.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    };
+
+    maybeActivate(registration.installing);
+
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+
+    registration.addEventListener('updatefound', () => {
+      maybeActivate(registration.installing);
+    });
+  }).catch(console.error);
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
 }
 
 /* Assay constants */
