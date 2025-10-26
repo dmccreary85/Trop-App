@@ -724,6 +724,19 @@ function computeAdvice(){
   const onsetMin = minutesSinceOnset(referenceTime);
   const elapsed1 = minutesDiff(t1Time, t0Time);
   const elapsed3 = minutesDiff(t3Time, t0Time);
+  const onsetAtT0 = t0Time
+    ? minutesSinceOnset(t0Time)
+    : (onsetMode()==='since' ? minutesSinceOnset() : null);
+  const onsetAtT1 = t1Time
+    ? minutesSinceOnset(t1Time)
+    : (onsetAtT0!==null && elapsed1!==null
+        ? onsetAtT0 + elapsed1
+        : (onsetMode()==='since' && t1!==null ? minutesSinceOnset() : null));
+  const earlyPresenterInitial = (a===ALINITY && t0 < 5) && (
+    (onsetAtT0!==null && onsetAtT0 < 60) ||
+    (onsetAtT0===null && onsetMin!==null && onsetMin < 60)
+  );
+  const earlyPresenterBeyond2h = earlyPresenterInitial && onsetAtT1!==null && onsetAtT1 >= 120;
 
   if (t0===null){
     const a = currentAssay();
@@ -778,10 +791,12 @@ function computeAdvice(){
 
   /* Early-presenter branch (only documented for Alinity, t0<5) */
   if (a===ALINITY && t0 < 5){
+    const earlyPathActive = earlyPresenterInitial && !earlyPresenterBeyond2h;
+    const expectedFirstInterval = earlyPathActive ? 120 : 60;
     if (t1===null){
-      const msg = (onsetMin<60) ? 'Take a 2-hour sample after the 0h troponin.' : 'Take a 1-hour sample after the 0h troponin.';
+      const msg = earlyPresenterInitial ? 'Take a 2-hour sample after the 0h troponin.' : 'Take a 1-hour sample after the 0h troponin.';
       let dueLine = '';
-      const nextMins = (onsetMin<60 && t0<5) ? 120 : 60;
+      const nextMins = earlyPresenterInitial ? 120 : 60;
       if (t0Time){
         const due = addMinutes(t0Time, nextMins);
         const sinceTxt = nextMins === 120 ? '(2 h since the 0h troponin)' : '(1 h since the 0h troponin)';
@@ -789,12 +804,11 @@ function computeAdvice(){
       } else {
         dueLine = `<div class="help">Enter the T0 sample time to calculate an exact due time.</div>`;
       }
-      const heading = (onsetMin<60) ? 'Early presenter branch' : 'Low initial troponin pathway (0/1 h)';
+      const heading = earlyPresenterInitial ? 'Early presenter (0/2-hour)' : 'Low initial troponin pathway (0/1 h)';
       { const note = out.join(''); $('output').innerHTML = note + line(`<h3>${heading}</h3><div>${msg}</div>${dueLine}`, 'info'); }
       return;
     }
-    const expectedFirstInterval = (onsetMin<60) ? 120 : 60;
-    if (onsetMin < 60 && elapsed1 !== null && elapsed1 < expectedFirstInterval - 10){
+    if (earlyPathActive && elapsed1 !== null && elapsed1 < expectedFirstInterval - 10){
       let timingHelp = '';
       if (t0Time){
         const dueAt = addMinutes(t0Time, expectedFirstInterval);
@@ -807,13 +821,34 @@ function computeAdvice(){
     }
     const d01 = Math.abs(t1 - t0);
     if (d01 < a.earlyDeltaRuleOut){
-      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-out (0/1 h)</h3>
-        <div>Δ 0→${onsetMin<60?'2':'1'} h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} with 0h troponin &lt; 5 → discharge if ECG normal.</div>
+      const bothUnderFive = t1 < 5 && t0 < 5;
+      if (earlyPresenterInitial && !earlyPresenterBeyond2h){
+        { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Early presenter (0/2-hour)</h3>
+        <div>Δ 0→2 h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} with 0h troponin &lt; 5 → discharge if ECG normal.</div>
         <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok'); }
-      appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
-      if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-      if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
-      return;
+        appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
+        if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+        if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+        return;
+      }
+      if (earlyPresenterInitial && earlyPresenterBeyond2h && bothUnderFive){
+        { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Early presenter — now &gt;2 h since onset (standard rule-out criteria applied)</h3>
+        <div>Now ≥ 2 hours since onset — meets early-presenter rule-out criteria. Δ 0→1 h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} ng/L and both values &lt; 5 ng/L → rule-out confirmed.</div>
+        <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok'); }
+        appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
+        if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+        if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+        return;
+      }
+      if (!earlyPresenterInitial){
+        { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-out (0/1 h)</h3>
+        <div>Δ 0→1 h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} with 0h troponin &lt; 5 → discharge if ECG normal.</div>
+        <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok'); }
+        appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
+        if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+        if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+        return;
+      }
     }
     if (d01 >= a.ruleInDelta || t1 >= a.ruleInAbs){
       { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-in (0/1 h)</h3>
