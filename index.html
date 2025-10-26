@@ -603,13 +603,13 @@ function hasOnset(){
   }
 }
 
-function minutesSinceOnset(){
+function minutesSinceOnset(referenceDate){
   if(onsetMode() === 'since'){
     return (n($('onsetHours').value)||0)*60 + (n($('onsetMins').value)||0);
   } else {
     const parsed = parseTimeValue($('onsetAt').value);
     if(!parsed) return null;
-    const now = new Date();
+    const now = referenceDate ? new Date(referenceDate) : new Date();
     const onsetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parsed.hours, parsed.minutes);
     let diff = (now - onsetDate) / 60000; // diff in minutes
     if(diff < 0){
@@ -648,6 +648,13 @@ function z99(){
 }
 function line(html, cls='info'){ return `<div class="result ${cls}">${html}</div>`; }
 
+function resolveOnsetReferenceTime(t0Val, t0Time, t1Val, t1Time, t3Val, t3Time){
+  if(t0Val!==null && t0Time) return t0Time;
+  if(t1Val!==null && t1Time) return t1Time;
+  if(t3Val!==null && t3Time) return t3Time;
+  return null;
+}
+
 function updateAssayUI(){
   const a = currentAssay();
   $('sexLabel').textContent =
@@ -656,15 +663,22 @@ function updateAssayUI(){
   $('z99Note').textContent = `Current 99th = ${z99()} ng/L`;
   // Early note only applicable to Alinity
   const t0 = n($('t0').value);
-  const onsetMin = minutesSinceOnset();
+  const t1 = n($('t1').value);
+  const t3 = n($('t3').value);
+  const t0Time = getSampleTime('t0Time');
+  const t1Time = getSampleTime('t1Time');
+  const t3Time = getSampleTime('t3Time');
+  const referenceTime = resolveOnsetReferenceTime(t0, t0Time, t1, t1Time, t3, t3Time);
+  const onsetMin = minutesSinceOnset(referenceTime);
   const showEarlyNote = (a===ALINITY && t0!==null && t0<5);
   $('earlyNote').style.display = showEarlyNote ? 'block' : 'none';
-  $('t1label').textContent = (a===ALINITY && t0!==null && t0<5 && onsetMin<60)
+  const useTwoHourLabel = (a===ALINITY && t0!==null && t0<5 && onsetMin!==null && onsetMin<60);
+  $('t1label').textContent = useTwoHourLabel
     ? 'Second sample (2 h from 0 h)'
     : 'Second sample (1 h from 0 h)';
   computeAdvice();
 }
-['assay','sex','onsetHours','onsetMins','t0'].forEach(id => $(id).addEventListener('input', updateAssayUI));
+['assay','sex','onsetHours','onsetMins','t0','t0Time'].forEach(id => $(id).addEventListener('input', updateAssayUI));
 ['onsetHours','onsetMins'].forEach(id => $(id).addEventListener('input', setTropSectionVisibility));
 $('onsetMode').addEventListener('change', updateOnsetModeUI);
 $('onsetAt').addEventListener('input', setTropSectionVisibility);
@@ -688,7 +702,6 @@ function computeAdvice(){
   }
   const out = [];
   const a = currentAssay();
-  const onsetMin = minutesSinceOnset();
   const t0 = n($('t0').value), t1=n($('t1').value), t3=n($('t3').value);
   const z = z99();
   const heart = n($('heart').value);
@@ -697,15 +710,17 @@ function computeAdvice(){
   const t0Time = getSampleTime('t0Time');
   const t1Time = getSampleTime('t1Time');
   const t3Time = getSampleTime('t3Time');
+  const referenceTime = resolveOnsetReferenceTime(t0, t0Time, t1, t1Time, t3, t3Time);
+  const onsetMin = minutesSinceOnset(referenceTime);
   const elapsed1 = minutesDiff(t1Time, t0Time);
   const elapsed3 = minutesDiff(t3Time, t0Time);
 
   if (t0===null){
     const a = currentAssay();
-    const onsetMin = minutesSinceOnset();
+    const onsetMinNow = minutesSinceOnset();
     let nextTimingMsg = '';
     if (a===ALINITY){
-      if (onsetMin < 60){
+      if (onsetMinNow < 60){
         nextTimingMsg = 'Plan a 1‑hour sample from time‑0 (if T0 returns <5 AND onset <60 min, the app will switch you to a 2‑hour sample).';
       } else {
         nextTimingMsg = 'Plan a 1‑hour sample from time‑0.';
@@ -715,18 +730,18 @@ function computeAdvice(){
     }
     // Advisory: if close to the 60 min cutoff, suggest timing T0 at 60 min (if clinically safe)
     let near60Msg = '';
-    if (onsetMin !== null && onsetMin < 60){
-      const minsTo60 = 60 - onsetMin;
+    if (onsetMinNow !== null && onsetMinNow < 60){
+      const minsTo60 = 60 - onsetMinNow;
       if (minsTo60 <= 10){
         near60Msg = `<div class="help">You are ${minsTo60} min short of 60 min since onset. If clinically safe, consider drawing the 0 h sample at the 60‑min mark to use the 1 h pathway (otherwise proceed now; early‑presenter rule may require a 2 h sample if T0 &lt; 5).</div>`;
       }
     }
     let singleRuleOutMsg = '';
-    if (onsetMin >= 120) {
+    if (onsetMinNow !== null && onsetMinNow >= 120) {
       singleRuleOutMsg = '<div class="result ok" style="margin-top:8px"><strong>Single‑sample rule‑out possible:</strong> if the 0 h troponin returns &lt; 4 ng/L, this patient can be cleared on a single troponin.</div>';
     }
     $('output').innerHTML = line(`<h3>Step 1 — Take 0 h troponin now</h3>
-      <div>Assay: ${a.name}. Symptom onset: ${Math.floor(onsetMin/60)} h ${onsetMin%60} min ago.</div>
+      <div>Assay: ${a.name}. Symptom onset: ${Math.floor(onsetMinNow/60)} h ${onsetMinNow%60} min ago.</div>
       <div><strong>Next sample:</strong> ${nextTimingMsg}</div>
       ${near60Msg}
       ${singleRuleOutMsg}
