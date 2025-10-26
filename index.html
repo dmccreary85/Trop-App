@@ -648,6 +648,16 @@ function z99(){
 }
 function line(html, cls='info'){ return `<div class="result ${cls}">${html}</div>`; }
 
+function appendFirstIntervalMessages(elapsedMinutes, expectedMinutes){
+  if(elapsedMinutes==null) return;
+  const label = expectedMinutes === 120 ? '2' : '1';
+  const tolerance = 10;
+  $('output').innerHTML += line(`<div class="help">Actual 0→${label} h interval = ${elapsedMinutes} min</div>`, 'info');
+  if(elapsedMinutes < expectedMinutes - tolerance || elapsedMinutes > expectedMinutes + tolerance){
+    $('output').innerHTML += line(`<div>${label} h sample at ${elapsedMinutes} min — outside ideal ${label} h ± ${tolerance} min</div>`, 'warn');
+  }
+}
+
 function resolveOnsetReferenceTime(t0Val, t0Time, t1Val, t1Time, t3Val, t3Time){
   if(t0Val!==null && t0Time) return t0Time;
   if(t1Val!==null && t1Time) return t1Time;
@@ -755,9 +765,8 @@ function computeAdvice(){
       $('output').innerHTML = line(`<h3>Rule-out (single sample)</h3>
         <div>Onset ≥ 2 h and 0h troponin ${fmt(t0)} &lt; ${a.lodSingleRuleOut} → discharge if ECG normal.</div>
         <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok');
-      if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+      appendFirstIntervalMessages(elapsed1, 60);
       if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-      if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
       if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
       return;
     } else {
@@ -784,23 +793,33 @@ function computeAdvice(){
       { const note = out.join(''); $('output').innerHTML = note + line(`<h3>${heading}</h3><div>${msg}</div>${dueLine}`, 'info'); }
       return;
     }
+    const expectedFirstInterval = (onsetMin<60) ? 120 : 60;
+    if (onsetMin < 60 && elapsed1 !== null && elapsed1 < expectedFirstInterval - 10){
+      let timingHelp = '';
+      if (t0Time){
+        const dueAt = addMinutes(t0Time, expectedFirstInterval);
+        timingHelp = `<div class="help">2 h sample due at ${fmtTime(dueAt)} (2 h since the 0h troponin)</div>`;
+      } else {
+        timingHelp = `<div class="help">Enter the T0 sample time to calculate the 2 h due time.</div>`;
+      }
+      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Second sample too early</h3><div>Recorded interval is ${elapsed1} min after the 0h troponin. Early presenters require a 2 h sample (120 ± 10 min) before interpreting results. Obtain a repeat sample at 2 h and re-enter the value.</div>${timingHelp}`, 'warn'); }
+      return;
+    }
     const d01 = Math.abs(t1 - t0);
     if (d01 < a.earlyDeltaRuleOut){
       { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-out (0/1 h)</h3>
         <div>Δ 0→${onsetMin<60?'2':'1'} h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} with 0h troponin &lt; 5 → discharge if ECG normal.</div>
         <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok'); }
-      if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+      appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
       if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-      if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
       if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
       return;
     }
     if (d01 >= a.ruleInDelta || t1 >= a.ruleInAbs){
       { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-in (0/1 h)</h3>
         <div>${d01>=a.ruleInDelta?`Δ ≥ ${a.ruleInDelta} ng/L`:`value ≥ ${a.ruleInAbs} ng/L`} → treat as ACS; Cardiology admission.</div>`, 'bad'); }
-      if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+      appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
       if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-      if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
       if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
       return;
     }
@@ -814,16 +833,15 @@ function computeAdvice(){
       { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (0/1 h)</h3><div>Obtain 3 h sample (from the 0h troponin).</div>${due3}`, 'warn'); }
       return;
     }
-    return eval3h(a, t0, t3, z, t0Time, t1Time, t3Time, elapsed1, elapsed3);
+    return eval3h(a, t0, t3, z, t0Time, t1Time, t3Time, elapsed1, elapsed3, expectedFirstInterval);
   }
 
   /* Immediate rule-in by absolute or delta if 1 h available (both assays) */
   if (t0 >= a.ruleInAbs || (t1!==null && Math.abs(t1 - t0) >= a.ruleInDelta)){
     $('output').innerHTML = line(`<h3>Rule-in</h3>
       <div>${t0>=a.ruleInAbs?`0h troponin ≥ ${a.ruleInAbs} ng/L`:`Δ ≥ ${a.ruleInDelta} ng/L`} → treat as ACS; Cardiology admission.</div>`, 'bad');
-    if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+    appendFirstIntervalMessages(elapsed1, 60);
     if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-    if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
     if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
     return;
   }
@@ -845,9 +863,8 @@ function computeAdvice(){
     const d01 = Math.abs(t1 - t0);
     if (d01 >= a.ruleInDelta){
       { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-in</h3><div>Δ 0→1 h ≥ ${a.ruleInDelta} ng/L → Cardiology.</div>`, 'bad'); }
-      if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+      appendFirstIntervalMessages(elapsed1, 60);
       if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-      if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
       if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
       return;
     }
@@ -866,14 +883,13 @@ function computeAdvice(){
   $('output').innerHTML = line(`<h3>Needs more information</h3><div>Enter due samples or review clinical status.</div>`,'info');
 }
 
-function eval3h(a, t0, t3, z99, t0Time, t1Time, t3Time, elapsed1, elapsed3){
+function eval3h(a, t0, t3, z99, t0Time, t1Time, t3Time, elapsed1, elapsed3, expectedFirstInterval=60){
   const d03 = Math.abs(t3 - t0);
   if (t3 >= a.ruleInAbs || d03 >= a.ruleInDelta){
     $('output').innerHTML = line(`<h3>Rule-in at 3 h</h3>
       <div>${t3>=a.ruleInAbs?`3 h ≥ ${a.ruleInAbs} ng/L`:`Δ 0→3 h ≥ ${a.ruleInDelta} ng/L`} → Cardiology.</div>`, 'bad');
-    if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+    appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
     if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-    if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
     if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
     return;
   }
@@ -881,17 +897,15 @@ function eval3h(a, t0, t3, z99, t0Time, t1Time, t3Time, elapsed1, elapsed3){
     $('output').innerHTML = line(`<h3>Rule-out at 3 h</h3>
       <div>3 h ${fmt(t3)} &lt; ${z99} and Δ 0→3 h ${fmt(d03)} &lt; ${a.ruleInDelta} → discharge if ECG normal.</div>
       <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok');
-    if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+    appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
     if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-    if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
     if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
     return;
   }
   $('output').innerHTML = line(`<h3>Elevated but stable</h3>
     <div>Δ 0→3 h &lt; ${a.ruleInDelta}. Consider Cardiology review and outpatient testing.</div>`, 'warn');
-  if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
+  appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
   if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-  if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
   if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
   $('output').innerHTML += line(`<div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'info');
 }
