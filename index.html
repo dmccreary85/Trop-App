@@ -201,7 +201,7 @@
           <input type="number" id="onsetHours" placeholder="Hours" min="0" step="1" inputmode="numeric" pattern="[0-9]*">
           <input type="number" id="onsetMins" placeholder="Minutes" min="0" max="59" step="1" inputmode="numeric" pattern="[0-9]*">
         </div>
-        <div class="help">&gt; 2 h enables single-sample rule-out if 0 h &lt; 4 (Alinity/POC).</div>
+        <div class="help">&gt; 2 h enables single-sample rule-out if 0h troponin &lt; 4 (Alinity/POC).</div>
       </div>
       <div class="field" id="onsetAtWrapper" style="display:none">
         <label for="onsetAt">Time of symptom onset</label>
@@ -220,7 +220,7 @@
     </div>
       <div class="field-grid">
         <div class="field">
-          <label for="t0">0 h hs-troponin I (ng/L)</label>
+          <label for="t0">0h troponin I (ng/L)</label>
           <div class="helper">Enter the arrival sample value.</div>
           <input type="number" id="t0" placeholder="e.g., 3.0" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t0TimeWrapper" style="display:none;">
@@ -230,16 +230,16 @@
         </div>
         <div class="field">
           <label id="t1label" for="t1">Second sample</label>
-          <div class="helper">Default timing is 1 h from the 0 h sample.</div>
+          <div class="helper">Default timing is 1 h after the 0h troponin.</div>
           <input type="number" id="t1" placeholder="leave blank until due" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t1TimeWrapper" style="display:none;">
             <input class="time-input" type="text" id="t1Time" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" /> <span>Sample time (optional)</span>
             <span>Sample time (optional)</span>
           </div>
-          <div class="help" id="earlyNote">Alinity early presenters: if onset &lt; 60 min and T0 &lt; 5 → the next sample is at 2 h from time‑0; otherwise 1 h from time‑0.</div>
+          <div class="help" id="earlyNote">Alinity early presenters: if onset &lt; 60 min and T0 &lt; 5 → the next sample is at 2 h after the 0h troponin; otherwise 1 h after the 0h troponin.</div>
         </div>
         <div class="field">
-          <label for="t3">3 h (from 0 h) sample</label>
+          <label for="t3">3 h (from 0h troponin) sample</label>
           <div class="helper">Leave blank until the sample is drawn.</div>
           <input type="number" id="t3" placeholder="leave blank until due" min="0" step="0.1" inputmode="decimal">
           <div class="help small" id="t3TimeWrapper" style="display:none;">
@@ -312,7 +312,7 @@
           </select>
           <div class="help">ULN = 99th centile (Alinity: ♂25 / ♀15 ng/L; POC: ♂26 / ♀14). Uses current assay/sex.</div>
           <div class="toggle" style="display:flex;align-items:center;justify-content:flex-start;margin-top:6px;">
-            <span>Use patient’s 0 h troponin value</span>
+            <span>Use patient’s 0h troponin value</span>
             <label class="switch">
               <input type="checkbox" id="heartTropAuto">
               <span class="slider round"></span>
@@ -339,8 +339,8 @@
         <li>This helper focuses on the hs-Troponin decision algorithm only.</li>
         <li>Repeat <strong>ECG</strong> when pain changes or with troponin draws.</li>
         <li><strong>Do not mix assays</strong> for a given patient.</li>
-        <li><strong>3 h</strong> means 3 hours from the 0 h sample (time-0).</li>
-        <li>Early presenters (Alinity only): if onset &lt; 60 min and 0 h &lt; 5 → 2 h sample; if ≥ 60 min → 1 h sample.</li>
+        <li><strong>3 h</strong> means 3 hours from the 0h troponin sample.</li>
+        <li>Early presenters (Alinity only): if onset &lt; 60 min and 0h troponin &lt; 5 → 2 h sample; if ≥ 60 min → 1 h sample.</li>
         <li>Unstable angina (ongoing/crescendo pain) → discuss with Cardiology (not suitable for rapid rule-out).</li>
       </ul>
       </div>
@@ -674,8 +674,8 @@ function updateAssayUI(){
   $('earlyNote').style.display = showEarlyNote ? 'block' : 'none';
   const useTwoHourLabel = (a===ALINITY && t0!==null && t0<5 && onsetMin!==null && onsetMin<60);
   $('t1label').textContent = useTwoHourLabel
-    ? 'Second sample (2 h from 0 h)'
-    : 'Second sample (1 h from 0 h)';
+    ? 'Second sample (2 h from 0h troponin)'
+    : 'Second sample (1 h from 0h troponin)';
   computeAdvice();
 }
 ['assay','sex','onsetHours','onsetMins','t0','t0Time'].forEach(id => $(id).addEventListener('input', updateAssayUI));
@@ -721,31 +721,31 @@ function computeAdvice(){
     let nextTimingMsg = '';
     if (a===ALINITY){
       if (onsetMinNow < 60){
-        nextTimingMsg = 'Plan a 1‑hour sample from time‑0 (if T0 returns <5 AND onset <60 min, the app will switch you to a 2‑hour sample).';
+        nextTimingMsg = 'Plan a 1‑hour sample after the 0h troponin (if T0 returns <5 AND onset <60 min, the app will switch you to a 2‑hour sample).';
       } else {
-        nextTimingMsg = 'Plan a 1‑hour sample from time‑0.';
+        nextTimingMsg = 'Plan a 1‑hour sample after the 0h troponin.';
       }
     } else {
-      nextTimingMsg = 'Plan a 1‑hour sample from time‑0.';
+      nextTimingMsg = 'Plan a 1‑hour sample after the 0h troponin.';
     }
     // Advisory: if close to the 60 min cutoff, suggest timing T0 at 60 min (if clinically safe)
     let near60Msg = '';
     if (onsetMinNow !== null && onsetMinNow < 60){
       const minsTo60 = 60 - onsetMinNow;
       if (minsTo60 <= 10){
-        near60Msg = `<div class="help">You are ${minsTo60} min short of 60 min since onset. If clinically safe, consider drawing the 0 h sample at the 60‑min mark to use the 1 h pathway (otherwise proceed now; early‑presenter rule may require a 2 h sample if T0 &lt; 5).</div>`;
+        near60Msg = `<div class="help">You are ${minsTo60} min short of 60 min since onset. If clinically safe, consider drawing the 0h troponin at the 60‑min mark to use the 1 h pathway (otherwise proceed now; early‑presenter rule may require a 2 h sample if T0 &lt; 5).</div>`;
       }
     }
     let singleRuleOutMsg = '';
     if (onsetMinNow !== null && onsetMinNow >= 120) {
-      singleRuleOutMsg = '<div class="result ok" style="margin-top:8px"><strong>Single‑sample rule‑out possible:</strong> if the 0 h troponin returns &lt; 4 ng/L, this patient can be cleared on a single troponin.</div>';
+      singleRuleOutMsg = '<div class="result ok" style="margin-top:8px"><strong>Single‑sample rule‑out possible:</strong> if the 0h troponin returns &lt; 4 ng/L, this patient can be cleared on a single troponin.</div>';
     }
-    $('output').innerHTML = line(`<h3>Step 1 — Take 0 h troponin now</h3>
+    $('output').innerHTML = line(`<h3>Step 1 — Take 0h troponin now</h3>
       <div>Assay: ${a.name}. Symptom onset: ${Math.floor(onsetMinNow/60)} h ${onsetMinNow%60} min ago.</div>
       <div><strong>Next sample:</strong> ${nextTimingMsg}</div>
       ${near60Msg}
       ${singleRuleOutMsg}
-      <div class="help">Enter the 0 h result when available to continue.</div>`, 'info');
+      <div class="help">Enter the 0h troponin result when available to continue.</div>`, 'info');
     return;
   }
 
@@ -753,7 +753,7 @@ function computeAdvice(){
   if (onsetMin>=120 && t0 < a.lodSingleRuleOut){
     if (t1===null){
       $('output').innerHTML = line(`<h3>Rule-out (single sample)</h3>
-        <div>Onset ≥ 2 h and 0 h ${fmt(t0)} &lt; ${a.lodSingleRuleOut} → discharge if ECG normal.</div>
+        <div>Onset ≥ 2 h and 0h troponin ${fmt(t0)} &lt; ${a.lodSingleRuleOut} → discharge if ECG normal.</div>
         <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok');
       if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
       if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
@@ -762,7 +762,7 @@ function computeAdvice(){
       return;
     } else {
       // Note: 1 h sample available — interpret both values using 0/1 h algorithm
-      out.push(line(`<div><em>Note:</em> 1 h result available; interpreting both 0 h and 1 h per the 0/1 h algorithm.</div>`, 'info'));
+      out.push(line(`<div><em>Note:</em> 1 h result available; interpreting both the 0h troponin and 1 h per the 0/1 h algorithm.</div>`, 'info'));
       // do not return; proceed to delta-based logic below
     }
   }
@@ -770,12 +770,12 @@ function computeAdvice(){
   /* Early-presenter branch (only documented for Alinity, t0<5) */
   if (a===ALINITY && t0 < 5){
     if (t1===null){
-      const msg = (onsetMin<60) ? 'Take a 2-hour sample from time-0.' : 'Take a 1-hour sample from time-0.';
+      const msg = (onsetMin<60) ? 'Take a 2-hour sample after the 0h troponin.' : 'Take a 1-hour sample after the 0h troponin.';
       let dueLine = '';
       const nextMins = (onsetMin<60 && t0<5) ? 120 : 60;
       if (t0Time){
         const due = addMinutes(t0Time, nextMins);
-        const sinceTxt = nextMins === 120 ? '(2 h since time‑0)' : '(1 h since time‑0)';
+        const sinceTxt = nextMins === 120 ? '(2 h since the 0h troponin)' : '(1 h since the 0h troponin)';
         dueLine = `<div class="help">Next troponin due at ${fmtTime(due)} ${sinceTxt}</div>`;
       } else {
         dueLine = `<div class="help">Enter the T0 sample time to calculate an exact due time.</div>`;
@@ -787,7 +787,7 @@ function computeAdvice(){
     const d01 = Math.abs(t1 - t0);
     if (d01 < a.earlyDeltaRuleOut){
       { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-out (0/1 h)</h3>
-        <div>Δ 0→${onsetMin<60?'2':'1'} h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} with 0 h &lt; 5 → discharge if ECG normal.</div>
+        <div>Δ 0→${onsetMin<60?'2':'1'} h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} with 0h troponin &lt; 5 → discharge if ECG normal.</div>
         <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok'); }
       if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
       if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
@@ -809,9 +809,9 @@ function computeAdvice(){
       let due3 = '';
       if (t0Time){
         const dueAt = addMinutes(t0Time, 180);
-        due3 = `<div class="help">3 h sample due at ${fmtTime(dueAt)} (3 h since time‑0)</div>`;
+        due3 = `<div class="help">3 h sample due at ${fmtTime(dueAt)} (3 h since the 0h troponin)</div>`;
       }
-      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (0/1 h)</h3><div>Obtain 3 h sample (from time-0).</div>${due3}`, 'warn'); }
+      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (0/1 h)</h3><div>Obtain 3 h sample (from the 0h troponin).</div>${due3}`, 'warn'); }
       return;
     }
     return eval3h(a, t0, t3, z, t0Time, t1Time, t3Time, elapsed1, elapsed3);
@@ -820,7 +820,7 @@ function computeAdvice(){
   /* Immediate rule-in by absolute or delta if 1 h available (both assays) */
   if (t0 >= a.ruleInAbs || (t1!==null && Math.abs(t1 - t0) >= a.ruleInDelta)){
     $('output').innerHTML = line(`<h3>Rule-in</h3>
-      <div>${t0>=a.ruleInAbs?`0 h ≥ ${a.ruleInAbs} ng/L`:`Δ ≥ ${a.ruleInDelta} ng/L`} → treat as ACS; Cardiology admission.</div>`, 'bad');
+      <div>${t0>=a.ruleInAbs?`0h troponin ≥ ${a.ruleInAbs} ng/L`:`Δ ≥ ${a.ruleInDelta} ng/L`} → treat as ACS; Cardiology admission.</div>`, 'bad');
     if (elapsed1) $('output').innerHTML += line(`<div class="help">Actual 0→1 h interval = ${elapsed1} min</div>`, 'info');
     if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
     if (elapsed1 && (elapsed1 < 50 || elapsed1 > 70)) $('output').innerHTML += line(`<div>1 h sample at ${elapsed1} min — outside ideal 60 ± 10 min</div>`, 'warn');
@@ -835,7 +835,7 @@ function computeAdvice(){
       let due1 = '';
       if (t0Time){
         const dueAt = addMinutes(t0Time, 60);
-        due1 = `<div class="help">1 h sample due at ${fmtTime(dueAt)} (1 h since time‑0)</div>`;
+        due1 = `<div class="help">1 h sample due at ${fmtTime(dueAt)} (1 h since the 0h troponin)</div>`;
       } else {
         due1 = `<div class="help">Enter T0 sample time to calculate the 1 h due time.</div>`;
       }
@@ -855,9 +855,9 @@ function computeAdvice(){
       let due3 = '';
       if (t0Time){
         const dueAt = addMinutes(t0Time, 180);
-        due3 = `<div class="help">3 h sample due at ${fmtTime(dueAt)} (3 h since time‑0)</div>`;
+        due3 = `<div class="help">3 h sample due at ${fmtTime(dueAt)} (3 h since the 0h troponin)</div>`;
       }
-      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (observe)</h3><div>Δ 0→1 h &lt; ${a.ruleInDelta} → obtain 3 h sample (from time-0).</div>${due3}`, 'warn'); }
+      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (observe)</h3><div>Δ 0→1 h &lt; ${a.ruleInDelta} → obtain 3 h sample (from the 0h troponin).</div>${due3}`, 'warn'); }
       return;
     }
     return eval3h(a, t0, t3, z, t0Time, t1Time, t3Time, elapsed1, elapsed3);
