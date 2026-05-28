@@ -1064,7 +1064,7 @@ function heartAutoTroponinScore(){
   computeAdvice();
 }
 /* PWA registration */
-const SW_VERSION = 'v47';
+const SW_VERSION = 'v48';
 if ('serviceWorker' in navigator) {
   const swUrl = `./sw.js?ver=${SW_VERSION}`;
   navigator.serviceWorker.register(swUrl).then(registration => {
@@ -1373,6 +1373,28 @@ function stripHtml(html){
     .trim();
 }
 
+function inlineRecommendationStage(){
+  const t1 = n($('t1').value);
+  const t3 = n($('t3').value);
+  if(t3!==null){
+    return { label:'Recommendation after 3 h result', anchor:$('t3Field') };
+  }
+  if(t1!==null){
+    const step = ($('t1Step') && $('t1Step').textContent || '1h').replace(/\s+/g, '');
+    const label = step === '2h' ? 'Recommendation after 2 h result' : 'Recommendation after 1 h result';
+    return { label, anchor:$('t1Field') };
+  }
+  return { label:'Recommendation after 0h result', anchor:$('t0Field') };
+}
+
+function placeInlineRecommendation(inline){
+  const stage = inlineRecommendationStage();
+  if(stage.anchor && stage.anchor.nextElementSibling !== inline){
+    stage.anchor.insertAdjacentElement('afterend', inline);
+  }
+  return stage.label;
+}
+
 function syncInlineRecommendationFromOutput(){
   const inline = $('inlineRecommendation');
   const output = $('output');
@@ -1394,10 +1416,11 @@ function syncInlineRecommendationFromOutput(){
     : result && result.classList.contains('ok') ? 'ok'
     : result && result.classList.contains('warn') ? 'warn'
     : 'info';
+  const stageLabel = placeInlineRecommendation(inline);
   inline.hidden = false;
   inline.className = `inline-recommendation ${tone}`;
   inline.innerHTML = `
-    <div class="inline-reco-label">Recommendation after 0h result</div>
+    <div class="inline-reco-label">${stageLabel}</div>
     <div class="inline-reco-title">${title}</div>
     <div class="inline-reco-action">${action}</div>
     ${dueTitle ? `<div class="inline-reco-action"><strong>${dueTitle}</strong>${dueNote ? `<br><span>${dueNote}</span>` : ''}</div>` : ''}
