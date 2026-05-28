@@ -101,7 +101,7 @@ function createApp(){
   }
 
   vm.runInContext(`${script}
-globalThis.__testApi = { computeAdvice, updateAssayUI, updateOnsetModeUI, setTropSectionVisibility };`, context);
+globalThis.__testApi = { computeAdvice, updateAssayUI, updateOnsetModeUI, setTropSectionVisibility, inlineRecommendationStage };`, context);
 
   function set(values){
     for (const [id, value] of Object.entries(values)) {
@@ -135,7 +135,11 @@ globalThis.__testApi = { computeAdvice, updateAssayUI, updateOnsetModeUI, setTro
     return document.getElementById(id);
   }
 
-  return { set, output, text, element };
+  function inlineStage(){
+    return context.__testApi.inlineRecommendationStage();
+  }
+
+  return { set, output, text, element, inlineStage };
 }
 
 const cases = [
@@ -497,6 +501,104 @@ for (const testCase of followUpCases) {
   }
   for (const rejected of testCase.reject || []) {
     assert.ok(!result.includes(rejected), `${testCase.name}: should not include ${rejected}\nRendered follow-up: ${result}`);
+  }
+  console.log(`PASS ${testCase.name}`);
+}
+
+const inlineStageCases = [
+  {
+    name: 'inline recommendation remains anchored to 0h when 0h is rule-in despite later entries',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 4, t0: 64, t1: 65, t3: 66 },
+    expectLabel: 'Recommendation after 0h result',
+    expectAnchor: 't0Field'
+  },
+  {
+    name: 'inline recommendation remains anchored to 1h when delta rule-in has later entries',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 4, t0: 10, t1: 16, t3: 12 },
+    expectLabel: 'Recommendation after 1 h result',
+    expectAnchor: 't1Field'
+  },
+  {
+    name: 'inline recommendation anchors to 1h for intermediate post-1h decision',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 4, t0: 14, t1: 17 },
+    expectLabel: 'Recommendation after 1 h result',
+    expectAnchor: 't1Field'
+  },
+  {
+    name: 'inline recommendation anchors to 3h when final 3h result drives disposition',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 4, t0: 10, t1: 12, t3: 11 },
+    expectLabel: 'Recommendation after 3 h result',
+    expectAnchor: 't3Field'
+  },
+  {
+    name: 'inline recommendation does not call untimed early-presenter second sample a 2h result',
+    values: { assay: 'alinity', sex: 'female', onsetMins: 45, t0: 4, t1: 5 },
+    expectLabel: 'Recommendation after second sample',
+    expectAnchor: 't1Field'
+  },
+  {
+    name: 'inline recommendation labels timed early-presenter serial sample as 2h result',
+    values: { assay: 'alinity', sex: 'female', onsetMins: 45, t0: 4, t1: 5, t0Time: '08:30', t1Time: '10:30' },
+    expectLabel: 'Recommendation after 2 h result',
+    expectAnchor: 't1Field'
+  }
+];
+
+for (const testCase of inlineStageCases) {
+  const app = createApp();
+  app.set(testCase.values);
+  const stage = app.inlineStage();
+  assert.equal(stage.label, testCase.expectLabel, `${testCase.name}: label mismatch`);
+  assert.equal(stage.anchor.id, testCase.expectAnchor, `${testCase.name}: anchor mismatch`);
+  console.log(`PASS ${testCase.name}`);
+}
+
+const invalidInputCases = [
+  {
+    name: 'invalid onset minutes do not unlock troponin workflow',
+    values: { assay: 'alinity', sex: 'female', onsetMins: 99 },
+    outputId: 'output',
+    expect: ['Enter time since symptom onset at presentation'],
+    elementChecks: [
+      ['tropSection', 'display', 'none'],
+      ['followUpSection', 'display', 'none']
+    ]
+  },
+  {
+    name: 'negative 0h troponin is treated as missing rather than low risk',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 3, t0: -1 },
+    outputId: 'output',
+    expect: ['Step 1 - take 0h troponin now'],
+    reject: ['Low risk - single-sample rule-out']
+  },
+  {
+    name: 'decimal 0h troponin is treated as missing because troponins are whole numbers',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 3, t0: 3.5 },
+    outputId: 'output',
+    expect: ['Step 1 - take 0h troponin now'],
+    reject: ['Low risk - single-sample rule-out']
+  },
+  {
+    name: 'negative HEART score does not create false low-HEART reassurance',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 3, t0: 3, heart: -1 },
+    outputId: 'output',
+    expect: ['HEART is recommended as an additional discharge checkpoint'],
+    reject: ['HEART < 4: guideline supports discharge to GP care']
+  }
+];
+
+for (const testCase of invalidInputCases) {
+  const app = createApp();
+  app.set(testCase.values);
+  const result = app.text(testCase.outputId);
+  for (const expected of testCase.expect) {
+    assert.ok(result.includes(expected), `${testCase.name}: missing ${expected}\nRendered output: ${result}`);
+  }
+  for (const rejected of testCase.reject || []) {
+    assert.ok(!result.includes(rejected), `${testCase.name}: should not include ${rejected}\nRendered output: ${result}`);
+  }
+  for (const [id, prop, expected] of testCase.elementChecks || []) {
+    assert.equal(app.element(id).style[prop], expected, `${testCase.name}: ${id}.${prop} mismatch`);
   }
   console.log(`PASS ${testCase.name}`);
 }

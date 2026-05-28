@@ -1064,7 +1064,7 @@ function heartAutoTroponinScore(){
   computeAdvice();
 }
 /* PWA registration */
-const SW_VERSION = 'v48';
+const SW_VERSION = 'v50';
 if ('serviceWorker' in navigator) {
   const swUrl = `./sw.js?ver=${SW_VERSION}`;
   navigator.serviceWorker.register(swUrl).then(registration => {
@@ -1119,7 +1119,14 @@ const POC = {
 };
 
 const $ = id => document.getElementById(id);
-const n = v => (v===''||v==null) ? null : Number(v);
+const n = v => {
+  if(v==null) return null;
+  const raw = String(v).trim();
+  if(raw==='') return null;
+  const value = Number(raw);
+  if(!Number.isFinite(value) || value < 0 || !Number.isInteger(value)) return null;
+  return value;
+};
 const fmt = x => (x==null||isNaN(x))?'—':String(Math.round(x));
 let presentationReferenceDate = null;
 let presentationTimingSignature = '';
@@ -1254,13 +1261,20 @@ function onsetMode(){
 
 function hasOnset(){
   if(onsetMode() === 'since'){
-    const h = $('onsetHours').value;
-    const m = $('onsetMins').value;
-    // consider provided if either field has a value (including 0)
-    return (h !== '' || m !== '');
+    return elapsedSinceInputMinutes() !== null;
   } else {
     return parseTimeValue($('onsetAt').value) !== null;
   }
+}
+
+function elapsedSinceInputMinutes(){
+  const rawHours = String($('onsetHours').value || '').trim();
+  const rawMins = String($('onsetMins').value || '').trim();
+  if(rawHours === '' && rawMins === '') return null;
+  const hours = rawHours === '' ? 0 : n(rawHours);
+  const mins = rawMins === '' ? 0 : n(rawMins);
+  if(hours === null || mins === null || mins > 59) return null;
+  return hours * 60 + mins;
 }
 
 function minutesSinceOnsetAt(referenceDate){
@@ -1296,7 +1310,7 @@ function getPresentationReferenceDate(){
 
 function presentationOnsetMinutes(){
   if(onsetMode() === 'since'){
-    return (n($('onsetHours').value)||0)*60 + (n($('onsetMins').value)||0);
+    return elapsedSinceInputMinutes();
   }
   if(!hasOnset()) return null;
   return minutesSinceOnsetAt(getPresentationReferenceDate());
@@ -1374,15 +1388,30 @@ function stripHtml(html){
 }
 
 function inlineRecommendationStage(){
+  const a = currentAssay();
+  const t0 = n($('t0').value);
   const t1 = n($('t1').value);
   const t3 = n($('t3').value);
+  const serialSampleLabel = () => {
+    const onsetMin = presentationOnsetMinutes();
+    const useTwoHour = t0!==null && t0 < 5 && onsetMin!==null && onsetMin <= 60;
+    if(!useTwoHour) return 'Recommendation after 1 h result';
+    const elapsed = minutesDiff(getSampleTime('t1Time'), getSampleTime('t0Time'));
+    return elapsed!==null && elapsed >= 110
+      ? 'Recommendation after 2 h result'
+      : 'Recommendation after second sample';
+  };
+  if(t0!==null && t0 >= a.ruleInAbs){
+    return { label:'Recommendation after 0h result', anchor:$('t0Field') };
+  }
+  if(t0!==null && t1!==null && Math.abs(t1 - t0) >= a.ruleInDelta){
+    return { label:serialSampleLabel(), anchor:$('t1Field') };
+  }
   if(t3!==null){
     return { label:'Recommendation after 3 h result', anchor:$('t3Field') };
   }
   if(t1!==null){
-    const step = ($('t1Step') && $('t1Step').textContent || '1h').replace(/\s+/g, '');
-    const label = step === '2h' ? 'Recommendation after 2 h result' : 'Recommendation after 1 h result';
-    return { label, anchor:$('t1Field') };
+    return { label:serialSampleLabel(), anchor:$('t1Field') };
   }
   return { label:'Recommendation after 0h result', anchor:$('t0Field') };
 }
