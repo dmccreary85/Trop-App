@@ -9,7 +9,7 @@
 <style>
   :root{
     --bg:#0b0f14;
-    --surface:#111;
+    --surface:#0f141b;
     --card:#141b25;
     --muted:#9fb0c3;
     --text:#e8f0f7;
@@ -20,6 +20,8 @@
     --border:#2a2a2a;
     --accent:#6aa9ff;
     --input-bg:#1c1c1c;
+    --control-border:rgba(255,255,255,0.16);
+    --control-border-hover:rgba(106,169,255,0.42);
     --radius-card:12px;
     --radius-input:8px;
     --shadow-elev-8:0 12px 24px rgba(0,0,0,0.35);
@@ -27,57 +29,167 @@
   *{box-sizing:border-box}
   body{
     margin:0;
-    background:var(--bg);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(74,163,255,0.12), transparent 30%),
+      linear-gradient(180deg, #0b0f14 0%, #0a0d12 100%);
     color:var(--text);
     font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
     font-size:16px;
     line-height:1.4;
   }
   header{
-    padding:16px;
+    padding:16px clamp(16px,4vw,32px);
     border-bottom:1px solid var(--border);
     display:flex;
-    gap:12px;
-    align-items:center;
-    flex-wrap:wrap;
+    justify-content:center;
   }
-  header h1{margin:0;font-size:18px;font-weight:600}
-  .header-note{flex-basis:100%;font-size:13px;color:var(--muted)}
-  .badge{font-size:12px;padding:2px 8px;border:1px solid var(--border);border-radius:999px;color:var(--muted)}
+  .header-inner{
+    width:100%;
+    max-width:1180px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+  }
+  header h1{margin:0;font-size:20px;font-weight:650;line-height:1.2}
+  .header-note{font-size:13px;color:var(--muted);margin-top:4px;max-width:680px}
+  .header-badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .badge{font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:999px;color:var(--muted);background:rgba(255,255,255,0.03);white-space:nowrap}
   main{
-    max-width:720px;
+    max-width:1180px;
     margin:0 auto;
-    padding:16px;
+    padding:18px;
     display:flex;
     flex-direction:column;
-    gap:24px;
+    gap:18px;
     padding-bottom:calc(160px + env(safe-area-inset-bottom));
   }
   .card{
     background:var(--card);
     border:1px solid var(--border);
     border-radius:var(--radius-card);
-    padding:12px;
+    padding:16px;
     display:flex;
     flex-direction:column;
     gap:16px;
   }
   .card h2{margin:0;font-size:16px;font-weight:600}
+  .section-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    padding-bottom:10px;
+  }
+  .section-kicker{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.06em}
   .section-stack{display:flex;flex-direction:column;gap:16px}
   .field-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
   .field{display:flex;flex-direction:column;gap:6px}
+  .aligned-field-grid .field{
+    display:grid;
+    grid-template-rows:auto minmax(44px,auto) auto auto;
+    align-content:start;
+    row-gap:6px;
+  }
+  .aligned-field-grid label,
+  .aligned-field-grid .helper,
+  .aligned-field-grid .help{
+    margin-bottom:0;
+  }
+  .sample-list{
+    display:grid;
+    gap:10px;
+  }
+  .sample-card{
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:var(--radius-input);
+    background:rgba(255,255,255,0.025);
+    padding:12px;
+    transition:border-color .2s ease, background .2s ease, opacity .2s ease;
+  }
+  .sample-card.sample-active{
+    border-color:rgba(106,169,255,0.65);
+    background:rgba(74,163,255,0.08);
+  }
+  .sample-card.sample-complete{
+    border-color:rgba(25,179,107,0.35);
+  }
+  .sample-card.sample-future,
+  .sample-card.sample-muted{
+    opacity:0.76;
+  }
+  .sample-card.sample-future{
+    opacity:0.9;
+  }
+  .sample-card.sample-muted{
+    background:rgba(255,255,255,0.018);
+  }
+  .sample-card.sample-muted input{
+    border-style:dashed;
+  }
+  .sample-heading{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .sample-step{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    min-width:42px;
+    height:28px;
+    padding:0 8px;
+    border-radius:999px;
+    background:#203553;
+    color:#cfe2ff;
+    font-size:13px;
+    font-weight:700;
+  }
+  .sample-text{
+    min-width:0;
+  }
+  .sample-text label{
+    margin-bottom:2px;
+  }
+  .sample-entry{
+    display:grid;
+    gap:8px;
+  }
+  .sample-time-row{
+    align-items:center;
+    gap:8px;
+    padding-top:2px;
+  }
+  .sample-card .helper,
+  .sample-card .help{
+    margin-bottom:0;
+  }
+  .sample-card.sample-muted > .sample-heading .helper:first-of-type::after{
+    content:" Not required by current single-sample pathway.";
+    color:var(--muted);
+  }
   label{display:block;font-size:16px;font-weight:500;color:var(--text);margin-bottom:4px}
   .helper{font-size:14px;color:var(--muted);margin-bottom:6px}
   input[type="number"],select,.time-input{
     width:100%;
     background:var(--input-bg);
-    border:1px solid var(--border);
+    border:1px solid var(--control-border);
     color:var(--text);
     padding:12px;
     border-radius:var(--radius-input);
     outline:2px solid transparent;
-    min-height:44px;
+    min-height:48px;
     font-size:16px;
+  }
+  input[type="number"]:hover,select:hover,.time-input:hover{
+    border-color:var(--control-border-hover);
+  }
+  select{
+    cursor:pointer;
   }
   .time-input{
     appearance:none;
@@ -94,6 +206,15 @@
     outline-color:var(--accent);
     outline-offset:2px;
   }
+  button:focus-visible,
+  summary:focus-visible,
+  a:focus-visible,
+  .segmented-btn:focus-visible,
+  .inline-reco-link:focus-visible,
+  .btn:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
   .help.small{
     display:flex;
     align-items:center;
@@ -108,18 +229,197 @@
   }
   .row{display:flex;gap:16px;flex-wrap:wrap} .row>*{flex:1 1 180px}
   .help{font-size:14px;color:var(--muted)}
+  .due-callout{
+    margin-top:10px;
+    border:1px solid rgba(106,169,255,0.38);
+    border-left:5px solid var(--blue);
+    border-radius:var(--radius-input);
+    background:rgba(74,163,255,0.10);
+    padding:10px 12px;
+    color:var(--text);
+  }
+  .due-callout strong{
+    display:block;
+    font-size:18px;
+    line-height:1.2;
+    margin-bottom:3px;
+  }
+  .due-callout span{
+    display:block;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.35;
+  }
+  .sample-timing-check{
+    margin-top:10px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:9px 11px;
+    font-size:13px;
+    line-height:1.35;
+  }
+  .sample-timing-check strong{
+    color:var(--text);
+  }
+  .sample-timing-check.ok{
+    border-color:rgba(32,201,151,0.42);
+    background:rgba(32,201,151,0.08);
+    color:#a8ddcf;
+  }
+  .sample-timing-check.info{
+    border-color:rgba(106,169,255,0.38);
+    background:rgba(74,163,255,0.10);
+    color:var(--muted);
+  }
+  .sample-timing-check.warn{
+    border-color:rgba(251,176,59,0.55);
+    background:rgba(251,176,59,0.11);
+    color:#f1cf9c;
+  }
+  [hidden]{
+    display:none !important;
+  }
+  .reference-note{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .reference-note .guideline-note{
+    display:block;
+    font-size:12px;
+    line-height:1.35;
+    color:#8192a7;
+  }
+  .visually-hidden{
+    position:absolute;
+    width:1px;
+    height:1px;
+    min-height:0 !important;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }
+  .segmented{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:4px;
+    background:rgba(255,255,255,0.04);
+    border:1px solid var(--border);
+    border-radius:var(--radius-input);
+    padding:4px;
+  }
+  .segmented-btn{
+    appearance:none;
+    border:0;
+    border-radius:6px;
+    background:transparent;
+    color:var(--muted);
+    cursor:pointer;
+    font-size:15px;
+    font-weight:600;
+    min-height:46px;
+    padding:8px 10px;
+  }
+  .segmented-btn.active{
+    background:#1e3a5c;
+    color:var(--text);
+    box-shadow:inset 0 0 0 1px rgba(106,169,255,0.35);
+  }
+  .clinical-note{
+    border:1px solid rgba(230,162,60,0.45);
+    border-left:5px solid var(--amber);
+    border-radius:var(--radius-input);
+    background:rgba(230,162,60,0.10);
+    color:var(--text);
+    font-size:14px;
+    padding:12px;
+  }
+  .clinical-note strong{color:#ffd18a;font-weight:600}
   .result{border-radius:var(--radius-card);padding:16px;border:1px solid var(--border);background:var(--surface);margin-bottom:10px}
+  .result h3{margin:0 0 10px;font-size:19px;line-height:1.25}
   .ok{border-left:6px solid var(--green)} .warn{border-left:6px solid var(--amber)}
   .bad{border-left:6px solid var(--red)} .info{border-left:6px solid var(--blue)}
-  .btn{appearance:none;border:1px solid var(--border);background:var(--input-bg);color:var(--text);padding:12px 16px;border-radius:var(--radius-input);cursor:pointer;min-height:44px;font-size:16px}
+  .advice-sections{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .advice-row{line-height:1.35}
+  .advice-row strong{color:var(--text);font-weight:600}
+  .advice-row.rationale{
+    color:var(--muted);
+    font-size:14px;
+  }
+  .advice-row.rationale strong{color:var(--muted)}
+  .input-summary{
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:var(--radius-input);
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.35;
+    padding:10px 12px;
+  }
+  .input-summary strong{color:var(--text);font-weight:600}
+  .inline-recommendation{
+    border:1px solid rgba(106,169,255,0.55);
+    border-left:6px solid var(--blue);
+    border-radius:var(--radius-input);
+    background:#101923;
+    box-shadow:0 8px 18px rgba(0,0,0,0.22);
+    padding:14px;
+  }
+  .inline-recommendation.ok{border-left-color:var(--green);border-color:rgba(25,179,107,0.45)}
+  .inline-recommendation.warn{border-left-color:var(--amber);border-color:rgba(230,162,60,0.55)}
+  .inline-recommendation.bad{border-left-color:var(--red);border-color:rgba(243,91,91,0.55)}
+  .inline-recommendation.info{border-left-color:var(--blue)}
+  .inline-recommendation + .sample-card{
+    margin-top:0;
+  }
+  .inline-recommendation[hidden]{
+    display:none;
+  }
+  .inline-reco-label{
+    color:#b8c8dc;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.06em;
+    margin-bottom:4px;
+    text-transform:uppercase;
+  }
+  .inline-reco-title{
+    font-size:18px;
+    font-weight:700;
+    line-height:1.25;
+    margin-bottom:4px;
+  }
+  .inline-reco-action{
+    color:var(--text);
+    font-size:16px;
+    line-height:1.35;
+  }
+  .inline-reco-link{
+    appearance:none;
+    background:transparent;
+    border:0;
+    color:#aed4ff;
+    cursor:pointer;
+    font:inherit;
+    font-size:13px;
+    font-weight:700;
+    margin-top:8px;
+    padding:0;
+  }
+  .btn{appearance:none;border:1px solid var(--control-border);background:var(--input-bg);color:var(--text);padding:12px 16px;border-radius:var(--radius-input);cursor:pointer;min-height:48px;font-size:16px}
   .btn.primary{background:#1e3a5c;border-color:#274a75}
-  .toggle {font-size:13px;color:var(--muted);}
-  .switch {position: relative;display: inline-block;width: 36px;height: 20px;margin-left:8px;}
+  .btn:hover{border-color:var(--control-border-hover)}
+  .btn.ghost{min-height:40px}
+  .toggle {font-size:14px;color:var(--muted);gap:10px;}
+  .switch {position: relative;display: inline-block;flex:0 0 auto;width:52px;height:44px;margin-left:0;}
   .switch input {opacity: 0;width: 0;height: 0;}
-  .slider {position: absolute;cursor: pointer;top: 0;left: 0;right: 0;bottom: 0;background-color:#555;transition:.3s;border-radius:34px;}
-  .slider:before {position: absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background-color:white;transition:.3s;border-radius:50%;}
+  .slider {position: absolute;cursor: pointer;top: 7px;left: 0;right: 0;bottom: 7px;background-color:#555;transition:.3s;border-radius:34px;}
+  .slider:before {position: absolute;content:"";height:22px;width:22px;left:4px;bottom:4px;background-color:white;transition:.3s;border-radius:50%;}
   .switch input:checked + .slider {background-color: var(--green);}
-  .switch input:checked + .slider:before {transform:translateX(16px);}
+  .switch input:checked + .slider:before {transform:translateX(22px);}
+  .switch input:focus-visible + .slider{outline:2px solid var(--accent);outline-offset:2px}
   details{border:1px solid var(--border);border-radius:var(--radius-card);padding:0;transition:max-height .35s ease}
   summary{cursor:pointer;color:var(--text);list-style:none;display:flex;align-items:center;gap:8px;font-size:16px;font-weight:500;padding:12px 16px;min-height:44px}
   summary::marker{display:none}
@@ -129,6 +429,213 @@
   details[open]{max-height:none}
   details:not([open]){max-height:52px;overflow:hidden}
   .details-body ul{margin:8px 0 0 20px;padding:0}
+  .safety-rail-list{
+    display:grid;
+    gap:10px;
+    margin-top:4px;
+  }
+  .safety-rail{
+    display:grid;
+    grid-template-columns:136px minmax(0,1fr);
+    gap:12px;
+    align-items:start;
+    border-top:1px solid rgba(255,255,255,0.08);
+    padding-top:10px;
+  }
+  .safety-rail:first-child{
+    border-top:0;
+    padding-top:0;
+  }
+  .safety-rail strong{
+    color:var(--text);
+    font-size:13px;
+    line-height:1.3;
+  }
+  .safety-rail span{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.4;
+  }
+  .resource-links{
+    display:grid;
+    gap:10px;
+    margin-top:8px;
+  }
+  .resource-link{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    min-height:48px;
+    padding:10px 12px;
+    border:1px solid rgba(106,169,255,0.24);
+    border-radius:var(--radius-input);
+    background:#132033;
+    color:var(--text);
+    text-decoration:none;
+  }
+  .resource-link:hover{
+    border-color:rgba(106,169,255,0.65);
+    background:#172a43;
+  }
+  .resource-title{
+    display:block;
+    font-size:14px;
+    font-weight:600;
+    line-height:1.25;
+  }
+  .resource-meta{
+    display:block;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.3;
+    margin-top:3px;
+  }
+  .resource-link::after{
+    content:"↗";
+    color:var(--muted);
+    flex:0 0 auto;
+    font-size:14px;
+  }
+  .followup-output{
+    display:grid;
+    gap:12px;
+  }
+  .followup-panel{
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:var(--radius-input);
+    background:rgba(255,255,255,0.025);
+    padding:12px;
+  }
+  .followup-panel.ok{border-left:5px solid var(--green)}
+  .followup-panel.warn{border-left:5px solid var(--amber)}
+  .followup-panel.bad{border-left:5px solid var(--red)}
+  .followup-panel.info{border-left:5px solid var(--blue)}
+  .followup-panel h3{
+    margin:0 0 8px;
+    font-size:17px;
+    line-height:1.25;
+  }
+  .followup-list{
+    margin:8px 0 0 18px;
+    padding:0;
+    color:var(--muted);
+  }
+  .followup-list li{margin:5px 0}
+  .followup-panel strong{color:var(--text)}
+  .followup-action-list{
+    display:grid;
+    gap:0;
+    margin-top:6px;
+  }
+  .followup-action{
+    display:grid;
+    grid-template-columns:144px minmax(0,1fr);
+    column-gap:12px;
+    align-items:start;
+    border-top:1px solid rgba(255,255,255,0.08);
+    color:var(--muted);
+    padding:9px 0;
+  }
+  .followup-action:first-child{
+    border-top:0;
+    padding-top:0;
+  }
+  .followup-action strong{
+    color:var(--text);
+    font-size:13px;
+    line-height:1.3;
+    white-space:nowrap;
+  }
+  .followup-action span{
+    font-size:14px;
+    line-height:1.35;
+  }
+  .investigation-note{
+    border:1px solid rgba(106,169,255,0.22);
+    border-left:5px solid var(--blue);
+    border-radius:var(--radius-input);
+    background:rgba(74,163,255,0.08);
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.4;
+    margin-top:12px;
+    padding:12px;
+  }
+  .investigation-note-title{
+    display:block;
+    color:var(--text);
+    font-size:14px;
+    font-weight:700;
+    line-height:1.25;
+    margin-bottom:4px;
+  }
+  .investigation-note p{
+    margin:0;
+  }
+  .investigation-details{
+    margin-top:10px;
+    background:rgba(255,255,255,0.02);
+  }
+  .investigation-details summary{
+    font-size:15px;
+    min-height:46px;
+  }
+  .investigation-grid{
+    display:grid;
+    gap:12px;
+    grid-template-columns:1fr;
+    padding:0 12px 12px;
+  }
+  .investigation-option{
+    display:grid;
+    grid-template-columns:170px minmax(0,1fr);
+    gap:14px;
+    align-items:start;
+    border:1px solid rgba(106,169,255,0.18);
+    border-radius:var(--radius-input);
+    background:#101923;
+    padding:12px;
+  }
+  .investigation-title{
+    display:block;
+    color:var(--text);
+    font-size:15px;
+    font-weight:700;
+    line-height:1.25;
+    margin:0;
+  }
+  .investigation-rows{
+    display:grid;
+    gap:8px;
+    margin:0;
+  }
+  .investigation-row{
+    display:grid;
+    grid-template-columns:72px minmax(0,1fr);
+    gap:8px;
+    align-items:start;
+    border-top:1px solid rgba(255,255,255,0.07);
+    padding-top:8px;
+  }
+  .investigation-row:first-child{
+    border-top:0;
+    padding-top:0;
+  }
+  .investigation-row dt{
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+    line-height:1.3;
+    margin:0;
+    text-transform:uppercase;
+  }
+  .investigation-row dd{
+    color:#c3cedb;
+    font-size:13px;
+    line-height:1.35;
+    margin:0;
+  }
   code{background:#0b1220;border:1px solid var(--border);padding:0 6px;border-radius:6px}
   #output{display:flex;flex-direction:column;gap:12px;width:100%}
   .recommendation-card{
@@ -154,49 +661,145 @@
     font-weight:600;
   }
   .recommendation-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .btn.ghost{background:transparent;border-color:transparent;color:var(--muted);padding:6px 12px;font-size:14px;min-height:auto}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--muted);padding:8px 12px;font-size:14px;min-height:40px}
   .btn.ghost:hover{color:var(--text);border-color:var(--border)}
   .recommendation-card.collapsed #output{display:none}
+  @media (min-width: 980px){
+    main{
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) 390px;
+      align-items:start;
+      padding-bottom:28px;
+    }
+    .recommendation-card{
+      grid-column:2;
+      grid-row:1 / span 6;
+      position:sticky;
+      top:18px;
+      bottom:auto;
+      max-height:calc(100vh - 36px);
+      overflow:auto;
+    }
+  }
+  @media (max-width: 979px){
+    main{padding-bottom:18px}
+    #tropSection .field-grid,
+    #tropSection .sample-list{
+      grid-template-columns:1fr;
+    }
+    .investigation-grid{
+      grid-template-columns:1fr;
+    }
+    #patientSection{order:1}
+    #tropSection{order:2}
+    #recommendation{order:3}
+    #heartSection{order:4}
+    #followUpSection{order:5}
+    #safetySection{order:6}
+    #referencesSection{order:7}
+    .recommendation-card{
+      position:static;
+      bottom:auto;
+      padding-bottom:16px;
+    }
+  }
+  @media (max-width: 720px){
+    .header-inner{flex-direction:column}
+    .header-badges{justify-content:flex-start}
+    main{padding:12px;gap:14px}
+    .card{padding:12px}
+    .clinical-note{
+      font-size:13px;
+      line-height:1.35;
+      padding:9px 10px;
+      border-left-width:4px;
+    }
+    .recommendation-card{border-radius:var(--radius-card)}
+    .investigation-option{
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+    .investigation-title{
+      margin-bottom:0;
+    }
+  }
+  @media (max-width: 560px){
+    .followup-action{
+      grid-template-columns:1fr;
+      gap:3px;
+      padding:8px 0;
+    }
+    .investigation-grid{
+      padding:0 8px 8px;
+    }
+    .investigation-row{
+      grid-template-columns:1fr;
+      gap:2px;
+    }
+    .safety-rail{
+      grid-template-columns:1fr;
+      gap:3px;
+      padding-top:9px;
+    }
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>Suspected ACS Troponin Workflow</h1>
-  <div class="header-note">Implements Alfred ACS guideline v5 (2025). Decision support only; use clinical judgment.</div>
+  <div class="header-inner">
+    <div>
+      <h1>Suspected ACS Troponin Workflow</h1>
+      <div class="header-note">Alfred guideline v5 decision support for applying assay-specific hs-troponin timing, thresholds, and disposition prompts.</div>
+    </div>
+    <div class="header-badges" aria-label="App status">
+      <span class="badge">Decision support</span>
+      <span class="badge">Guideline v5</span>
+    </div>
+  </div>
 </header>
 
 <main>
-  <section class="card">
+  <section class="card" id="patientSection">
+    <div class="section-title">
+      <h2>1. Patient and assay</h2>
+      <span class="section-kicker">At presentation</span>
+    </div>
     <div class="section-stack">
-      <div class="field">
-        <label for="assay">Assay</label>
-        <div class="helper">Do not mix assays for a single patient.</div>
-        <select id="assay">
-          <option value="alinity" selected>Abbott Alinity (lab)</option>
-          <option value="poc">POC (Quidel TriageTrue)</option>
-        </select>
+      <div class="field-grid aligned-field-grid">
+        <div class="field">
+          <label for="assay">Assay</label>
+          <div class="helper">Do not mix assays for a single patient.</div>
+          <select id="assay">
+            <option value="alinity" selected>Abbott Alinity (lab)</option>
+            <option value="poc">POC (Quidel TriageTrue)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label id="sexLabel" for="sex">99th centile range</label>
+          <div class="helper" id="z99Helper">Alinity: male 25 ng/L, female 15 ng/L.</div>
+          <select id="sex">
+            <option value="male">Male range</option>
+            <option value="female" selected>Female range</option>
+            <option value="lower">Transgender / range uncertain</option>
+          </select>
+          <div class="help" id="z99Note">Current 99th = 15 ng/L</div>
+        </div>
       </div>
       <div class="field">
-        <label id="sexLabel" for="sex">Sex for 99th centile</label>
-        <div class="helper" id="z99Helper">Alinity: male 25 ng/L, female 15 ng/L.</div>
-        <select id="sex">
-          <option value="male">Male</option>
-          <option value="female" selected>Female</option>
-          <option value="lower">Use lower cut-off</option>
-        </select>
-        <div class="help" id="z99Note">Current 99th = 15 ng/L</div>
-      </div>
-      <div class="field">
-        <label for="onsetMode">Symptom timing input</label>
-        <div class="helper">Choose how you will capture onset timing.</div>
-        <select id="onsetMode">
+        <label for="onsetMode">Symptom timing at presentation</label>
+        <div class="helper">The Alfred algorithm uses time since symptom onset at presentation.</div>
+        <select id="onsetMode" class="visually-hidden" aria-hidden="true" tabindex="-1">
           <option value="at" selected>Enter time of onset</option>
           <option value="since">Enter time since onset</option>
         </select>
+        <div class="segmented" aria-label="Symptom timing input mode">
+          <button class="segmented-btn active" id="onsetModeAtBtn" type="button" aria-pressed="true">Time of onset</button>
+          <button class="segmented-btn" id="onsetModeSinceBtn" type="button" aria-pressed="false">Time since onset</button>
+        </div>
       </div>
       <div class="field" id="onsetSinceWrapper">
-        <label for="onsetHours">Time since symptom onset</label>
-        <div class="helper">Provide hours and minutes if more than 2 hours.</div>
+        <label for="onsetHours">Time since symptom onset at presentation</label>
+        <div class="helper">Provide the elapsed time at presentation, not the elapsed time later in the stay.</div>
         <div class="row">
           <input type="number" id="onsetHours" placeholder="Hours" min="0" step="1" inputmode="numeric" pattern="[0-9]*">
           <input type="number" id="onsetMins" placeholder="Minutes" min="0" max="59" step="1" inputmode="numeric" pattern="[0-9]*">
@@ -205,53 +808,83 @@
       </div>
       <div class="field" id="onsetAtWrapper" style="display:none">
         <label for="onsetAt">Time of symptom onset</label>
-        <div class="helper">Use 24-hour clock (e.g., 14:30). The app calculates time since onset automatically.</div>
+        <div class="helper">Use 24-hour clock (e.g., 14:30). The app captures presentation timing when this is entered.</div>
         <input class="time-input" type="text" id="onsetAt" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" />
+      </div>
+      <div class="clinical-note">
+        <strong>Clinical reminder:</strong> ongoing or crescendo typical cardiac pain can still represent unstable angina; discuss with a senior clinician ± Cardiology regardless of troponin results.
       </div>
     </div>
   </section>
   <section class="card" id="tropSection" style="display:none">
-    <div class="toggle" style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px;">
-      <span>Record sample times</span>
-      <label class="switch">
-        <input type="checkbox" id="includeTimes">
-        <span class="slider round"></span>
-      </label>
+    <div class="section-title">
+      <h2>2. Troponin results</h2>
+      <div class="toggle" style="display:flex;justify-content:flex-end;align-items:center;">
+        <span>Record sample times</span>
+        <label class="switch">
+          <input type="checkbox" id="includeTimes" aria-label="Record sample times">
+          <span class="slider round"></span>
+        </label>
+      </div>
     </div>
-      <div class="field-grid">
-        <div class="field">
-          <label for="t0">0h troponin I (ng/L)</label>
-          <div class="helper">Enter the arrival sample value.</div>
-          <input type="number" id="t0" placeholder="e.g., 3.0" min="0" step="0.1" inputmode="decimal">
-          <div class="help small" id="t0TimeWrapper" style="display:none;">
-            <input class="time-input" type="text" id="t0Time" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" /> <span>Sample time (optional)</span>
-            <span>Sample time (optional)</span>
+      <div class="sample-list">
+        <div class="field sample-card sample-active" id="t0Field">
+          <div class="sample-heading">
+            <span class="sample-step">0h</span>
+            <div class="sample-text">
+              <label for="t0">0h troponin I (ng/L)</label>
+              <div class="helper">Arrival sample value.</div>
+            </div>
+          </div>
+          <div class="sample-entry">
+            <input type="number" id="t0" placeholder="e.g., 3" min="0" step="1" inputmode="numeric" pattern="[0-9]*">
+            <div class="help small sample-time-row" id="t0TimeWrapper" style="display:none;">
+              <input class="time-input" type="text" id="t0Time" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" /> <span>Sample time (optional)</span>
+            </div>
           </div>
         </div>
-        <div class="field">
-          <label id="t1label" for="t1">Second sample</label>
-          <div class="helper">Default timing is 1 h after the 0h troponin.</div>
-          <input type="number" id="t1" placeholder="leave blank until due" min="0" step="0.1" inputmode="decimal">
-          <div class="help small" id="t1TimeWrapper" style="display:none;">
-            <input class="time-input" type="text" id="t1Time" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" /> <span>Sample time (optional)</span>
-            <span>Sample time (optional)</span>
+        <div class="inline-recommendation" id="inlineRecommendation" hidden></div>
+        <div class="field sample-card sample-future" id="t1Field">
+          <div class="sample-heading">
+            <span class="sample-step" id="t1Step">1h</span>
+            <div class="sample-text">
+              <label id="t1label" for="t1">Second sample (ng/L)</label>
+              <div class="helper">Only enter when due.</div>
+            </div>
           </div>
-          <div class="help" id="earlyNote">Alinity early presenters: if onset &lt; 60 min and T0 &lt; 5 → the next sample is at 2 h after the 0h troponin; otherwise 1 h after the 0h troponin.</div>
+          <div class="sample-entry">
+            <input type="number" id="t1" placeholder="leave blank until due" min="0" step="1" inputmode="numeric" pattern="[0-9]*">
+            <div class="help small sample-time-row" id="t1TimeWrapper" style="display:none;">
+              <input class="time-input" type="text" id="t1Time" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" /> <span>Sample time (optional)</span>
+            </div>
+            <div class="sample-timing-check" id="t1TimingCheck" hidden></div>
+            <div class="help" id="earlyNote">For 0h troponin &lt; 5, presentation at or before 60 min from onset requires a 2 h sample from the 0h troponin; presentation &gt; 60 min requires a 1 h sample.</div>
+          </div>
         </div>
-        <div class="field">
-          <label for="t3">3 h (from 0h troponin) sample</label>
-          <div class="helper">Leave blank until the sample is drawn.</div>
-          <input type="number" id="t3" placeholder="leave blank until due" min="0" step="0.1" inputmode="decimal">
-          <div class="help small" id="t3TimeWrapper" style="display:none;">
-            <input class="time-input" type="text" id="t3Time" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" /> <span>Sample time (optional)</span>
-            <span>Sample time (optional)</span>
+        <div class="field sample-card sample-future" id="t3Field">
+          <div class="sample-heading">
+            <span class="sample-step">3h</span>
+            <div class="sample-text">
+              <label for="t3">3 h sample (ng/L)</label>
+              <div class="helper">From the 0h troponin; enter if required.</div>
+            </div>
+          </div>
+          <div class="sample-entry">
+            <input type="number" id="t3" placeholder="leave blank until due" min="0" step="1" inputmode="numeric" pattern="[0-9]*">
+            <div class="help small sample-time-row" id="t3TimeWrapper" style="display:none;">
+              <input class="time-input" type="text" id="t3Time" inputmode="numeric" placeholder="HH:MM" autocomplete="off" maxlength="5" /> <span>Sample time (optional)</span>
+            </div>
+            <div class="sample-timing-check" id="t3TimingCheck" hidden></div>
           </div>
         </div>
       </div>
   </section>
 
   <section class="card" id="heartSection" style="display:none">
-    <h2>HEART score</h2>
+    <div class="section-title">
+      <h2>3. HEART score</h2>
+      <span class="section-kicker">Optional checkpoint</span>
+    </div>
     <div class="field">
       <label for="heart">HEART score (optional)</label>
       <div class="helper">Manual entry if you already have a total.</div>
@@ -314,7 +947,7 @@
           <div class="toggle" style="display:flex;align-items:center;justify-content:flex-start;margin-top:6px;">
             <span>Use patient’s 0h troponin value</span>
             <label class="switch">
-              <input type="checkbox" id="heartTropAuto">
+              <input type="checkbox" id="heartTropAuto" aria-label="Use patient’s 0h troponin value">
               <span class="slider round"></span>
             </label>
           </div>
@@ -330,31 +963,58 @@
     </details>
   </section>
 
-  <section class="card">
+  <section class="card" id="followUpSection" style="display:none">
+    <div class="section-title">
+      <h2>4. Follow-up and investigations</h2>
+      <span class="section-kicker">Disposition planning</span>
+    </div>
+    <div class="followup-output" id="followUpOutput"></div>
+  </section>
+
+  <section class="card" id="safetySection">
     <details>
       <summary>Safety rails and reminders</summary>
       <div class="details-body">
-      <ul>
-        <li>ECG within 10 minutes for suspected ACS; manage STEMI on the dedicated pathway.</li>
-        <li>This helper focuses on the hs-Troponin decision algorithm only.</li>
-        <li>Repeat <strong>ECG</strong> when pain changes or with troponin draws.</li>
-        <li><strong>Do not mix assays</strong> for a given patient.</li>
-        <li><strong>3 h</strong> means 3 hours from the 0h troponin sample.</li>
-        <li>Early presenters (Alinity only): if onset &lt; 60 min and 0h troponin &lt; 5 → 2 h sample; if ≥ 60 min → 1 h sample.</li>
-        <li>Unstable angina (ongoing/crescendo pain) → discuss with Cardiology (not suitable for rapid rule-out).</li>
-      </ul>
+        <div class="safety-rail-list">
+          <div class="safety-rail">
+            <strong>ECG and STEMI</strong>
+            <span>ECG within 10 minutes for suspected ACS. Manage STEMI on the dedicated pathway and repeat ECG when pain changes or with troponin draws.</span>
+          </div>
+          <div class="safety-rail">
+            <strong>Tool scope</strong>
+            <span>This helper supports the hs-troponin decision algorithm only; it does not replace ECG interpretation or clinical review.</span>
+          </div>
+          <div class="safety-rail">
+            <strong>Sampling rules</strong>
+            <span>Do not mix assays. The 3 h sample is 3 hours from the 0h troponin. If 0h troponin is &lt;5 ng/L, use a 2 h sample when presentation is ≤60 min from onset; otherwise use a 1 h sample.</span>
+          </div>
+          <div class="safety-rail">
+            <strong>Unstable angina</strong>
+            <span>Ongoing or crescendo typical cardiac pain can still represent unstable angina; discuss with a senior clinician ± Cardiology regardless of troponin results.</span>
+          </div>
+        </div>
       </div>
     </details>
   </section>
 
-  <section class="card">
+  <section class="card" id="referencesSection">
     <details>
       <summary>References and resources</summary>
       <div class="details-body">
-      <ul>
-        <li><a href="https://app.prompt.org.au/download/135694?code=5b1736c319b4fc04be09b1b3fd8eb25a" target="_blank" rel="noopener">Alfred Health Chest Pain &amp; Suspected ACS Guideline (v5, 2025)</a></li>
-        <li><a href="https://academic.oup.com/eurheartj/article/44/38/3720/7243210?login=false" target="_blank" rel="noopener">ESC 2023 ACS Guideline — European Heart Journal</a></li>
-      </ul>
+        <div class="resource-links" aria-label="Reference links">
+          <a class="resource-link" href="https://app.prompt.org.au/download/135694?code=5b1736c319b4fc04be09b1b3fd8eb25a" target="_blank" rel="noopener">
+            <span>
+              <span class="resource-title">Alfred Health Chest Pain &amp; Suspected ACS Guideline</span>
+              <span class="resource-meta">Prompt guideline v5, 2025</span>
+            </span>
+          </a>
+          <a class="resource-link" href="https://academic.oup.com/eurheartj/article/44/38/3720/7243210?login=false" target="_blank" rel="noopener">
+            <span>
+              <span class="resource-title">ESC 2023 ACS Guideline</span>
+              <span class="resource-meta">European Heart Journal</span>
+            </span>
+          </a>
+        </div>
       </div>
     </details>
   </section>
@@ -364,6 +1024,7 @@
       <h2>Recommendation</h2>
       <button class="btn ghost" id="recommendationToggle" type="button">Hide details</button>
     </div>
+    <div class="input-summary" id="inputSummary"></div>
     <div id="output"></div>
   </section>
 
@@ -403,7 +1064,7 @@ function heartAutoTroponinScore(){
   computeAdvice();
 }
 /* PWA registration */
-const SW_VERSION = 'v3';
+const SW_VERSION = 'v47';
 if ('serviceWorker' in navigator) {
   const swUrl = `./sw.js?ver=${SW_VERSION}`;
   navigator.serviceWorker.register(swUrl).then(registration => {
@@ -439,27 +1100,29 @@ if ('serviceWorker' in navigator) {
 const ALINITY = {
   name: 'Alinity',
   lodSingleRuleOut: 4,
-  earlyDeltaRuleOut: 2,
+  lowDeltaRuleOut: 2,
   obsUpper: 63,
   ruleInAbs: 64,
   ruleInDelta: 6,
   z99: { male:25, female:15, lower:15 },
-  earlyPresenterRule: true // 1h vs 2h for t0<5 and onset<60m
+  lowInitialTimingRule: true // 1 h vs 2 h for 0h <5 and presentation at/before 60 min
 };
 const POC = {
   name: 'POC',
   lodSingleRuleOut: 4,
-  earlyDeltaRuleOut: 3,
+  lowDeltaRuleOut: 3,
   obsUpper: 59,
   ruleInAbs: 60,
   ruleInDelta: 8,
   z99: { male:26, female:14, lower:14 },
-  earlyPresenterRule: false // not specified like Alinity in guideline
+  lowInitialTimingRule: true // Figure 3 refers back to Figure 1 timing footnotes
 };
 
 const $ = id => document.getElementById(id);
 const n = v => (v===''||v==null) ? null : Number(v);
-const fmt = x => (x==null||isNaN(x))?'—':(Math.round(x*10)/10).toFixed(1);
+const fmt = x => (x==null||isNaN(x))?'—':String(Math.round(x));
+let presentationReferenceDate = null;
+let presentationTimingSignature = '';
 
 // --- Helper functions for 24-hour time inputs ---
 function parseTimeValue(value){
@@ -539,9 +1202,6 @@ function attachTimeInputHandlers(){
     });
     el.addEventListener('blur', () => normalizeTimeField(el));
     el.addEventListener('change', () => normalizeTimeField(el));
-    el.addEventListener('blur', () => normalizeTimeField(el));
-    el.addEventListener('change', () => normalizeTimeField(el));
-    el.addEventListener('input', () => el.setCustomValidity(''));
     normalizeTimeField(el);
   });
 }
@@ -603,31 +1263,55 @@ function hasOnset(){
   }
 }
 
-function minutesSinceOnset(referenceDate){
+function minutesSinceOnsetAt(referenceDate){
+  const parsed = parseTimeValue($('onsetAt').value);
+  if(!parsed) return null;
+  const now = referenceDate ? new Date(referenceDate) : new Date();
+  const onsetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parsed.hours, parsed.minutes);
+  let diff = (now - onsetDate) / 60000; // diff in minutes
+  if(diff < 0){
+    // onset time is from previous day
+    diff += 24 * 60;
+  }
+  return Math.floor(diff);
+}
+
+function currentPresentationTimingSignature(){
+  return [
+    onsetMode(),
+    $('onsetHours').value,
+    $('onsetMins').value,
+    $('onsetAt').value
+  ].join('|');
+}
+
+function getPresentationReferenceDate(){
+  const sig = currentPresentationTimingSignature();
+  if(sig !== presentationTimingSignature){
+    presentationTimingSignature = sig;
+    presentationReferenceDate = new Date();
+  }
+  return presentationReferenceDate;
+}
+
+function presentationOnsetMinutes(){
   if(onsetMode() === 'since'){
     return (n($('onsetHours').value)||0)*60 + (n($('onsetMins').value)||0);
-  } else {
-    const parsed = parseTimeValue($('onsetAt').value);
-    if(!parsed) return null;
-    const now = referenceDate ? new Date(referenceDate) : new Date();
-    const onsetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parsed.hours, parsed.minutes);
-    let diff = (now - onsetDate) / 60000; // diff in minutes
-    if(diff < 0){
-      // onset time is from previous day
-      diff += 24 * 60;
-    }
-    return Math.floor(diff);
   }
+  if(!hasOnset()) return null;
+  return minutesSinceOnsetAt(getPresentationReferenceDate());
 }
 
 function setTropSectionVisibility(){
   const show = hasOnset();
   $('tropSection').style.display = show ? 'flex' : 'none';
   if ($('heartSection')) $('heartSection').style.display = show ? 'flex' : 'none';
+  if (!show) setFollowUpGuidance('hidden');
   computeAdvice();
 }
 
 function updateOnsetModeUI(){
+  syncOnsetModeButtons();
   if(onsetMode() === 'since'){
     $('onsetSinceWrapper').style.display = 'flex';
     $('onsetAtWrapper').style.display = 'none';
@@ -648,49 +1332,382 @@ function z99(){
 }
 function line(html, cls='info'){ return `<div class="result ${cls}">${html}</div>`; }
 
+function updateInputSummary(){
+  const el = $('inputSummary');
+  if(!el) return;
+  const a = currentAssay();
+  const sexValue = $('sex').value;
+  const sexOption = $('sex').selectedOptions ? $('sex').selectedOptions[0] : null;
+  const sexText = sexValue === 'lower'
+    ? `99th ${z99()} ng/L (lower reference range)`
+    : `${sexOption ? sexOption.textContent : sexValue} 99th ${z99()} ng/L`;
+  const onsetMin = presentationOnsetMinutes();
+  const t0 = n($('t0').value), t1 = n($('t1').value), t3 = n($('t3').value);
+  const parts = [
+    a.name,
+    sexText,
+    onsetMin===null ? 'onset pending' : `onset ${Math.floor(onsetMin/60)} h ${onsetMin%60} min`,
+    t0===null ? '0h pending' : `0h ${fmt(t0)} ng/L`
+  ];
+  if(t1!==null) parts.push(`2nd ${fmt(t1)} ng/L`);
+  if(t3!==null) parts.push(`3h ${fmt(t3)} ng/L`);
+  el.innerHTML = `<strong>Current inputs:</strong> ${parts.join(' · ')}`;
+}
+
+function advice(title, why, action, extra=''){
+  return `<h3>${title}</h3>
+    <div class="advice-sections">
+      <div class="advice-row"><strong>Action:</strong> ${action}</div>
+      <div class="advice-row rationale"><strong>Why:</strong> ${why}</div>
+    </div>
+    ${extra}`;
+}
+
+function stripHtml(html){
+  return String(html || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function syncInlineRecommendationFromOutput(){
+  const inline = $('inlineRecommendation');
+  const output = $('output');
+  if(!inline || !output) return;
+  const html = output.innerHTML || '';
+  const title = stripHtml((html.match(/<h3>([\s\S]*?)<\/h3>/i) || [])[1]);
+  const action = stripHtml((html.match(/<strong>Action:<\/strong>\s*([\s\S]*?)(?:<\/div>|<div class="advice-row rationale")/i) || [])[1]);
+  const dueTitle = stripHtml((html.match(/<div class="due-callout"><strong>([\s\S]*?)<\/strong>/i) || [])[1]);
+  const dueNote = stripHtml((html.match(/<div class="due-callout">[\s\S]*?<span>([\s\S]*?)<\/span>/i) || [])[1]);
+  const hasTroponinContext = hasOnset() && n($('t0').value)!==null;
+  if(!title || !action || !hasTroponinContext){
+    inline.hidden = true;
+    inline.innerHTML = '';
+    inline.className = 'inline-recommendation';
+    return;
+  }
+  const result = output.querySelector('.result');
+  const tone = result && result.classList.contains('bad') ? 'bad'
+    : result && result.classList.contains('ok') ? 'ok'
+    : result && result.classList.contains('warn') ? 'warn'
+    : 'info';
+  inline.hidden = false;
+  inline.className = `inline-recommendation ${tone}`;
+  inline.innerHTML = `
+    <div class="inline-reco-label">Recommendation after 0h result</div>
+    <div class="inline-reco-title">${title}</div>
+    <div class="inline-reco-action">${action}</div>
+    ${dueTitle ? `<div class="inline-reco-action"><strong>${dueTitle}</strong>${dueNote ? `<br><span>${dueNote}</span>` : ''}</div>` : ''}
+    <button class="inline-reco-link" type="button" id="inlineRecommendationLink">View full recommendation</button>
+  `;
+  const link = $('inlineRecommendationLink');
+  if(link) link.addEventListener('click', scrollToRecommendation);
+}
+
+function scrollToRecommendation(){
+  const recommendation = $('recommendation');
+  if(!recommendation) return;
+  if(recommendation.scrollIntoView) recommendation.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function unstableAnginaReminder(){
+  return '<div class="help">If ongoing or crescendo typical cardiac pain suggests unstable angina, discuss with a senior clinician ± Cardiology regardless of troponin results.</div>';
+}
+
+function followUpPanel(title, cls, body, extra=''){
+  return `<div class="followup-panel ${cls}">
+    <h3>${title}</h3>
+    ${body}
+    ${extra}
+  </div>`;
+}
+
+function outpatientTestingOptions(){
+  return `<div class="investigation-note">
+    <strong class="investigation-note-title">Outpatient testing decision</strong>
+    <p>Use the troponin pathway and HEART score to decide whether outpatient testing is appropriate and how senior the disposition discussion should be. If discharge with outpatient testing is being considered, choose CTCA, MPI, or stress echo with Cardiology or a senior ED clinician.</p>
+  </div>
+  <details class="investigation-details">
+    <summary>Investigation options reference</summary>
+    <div class="investigation-grid" aria-label="Outpatient testing options">
+      <div class="investigation-option">
+        <strong class="investigation-title">CTCA</strong>
+        <dl class="investigation-rows">
+          <div class="investigation-row"><dt>Best fit</dt><dd>Best used in younger patients.</dd></div>
+          <div class="investigation-row"><dt>Check</dt><dd>Iodine contrast required; heart-rate control to &lt;60 with beta-blocker or ivabradine.</dd></div>
+          <div class="investigation-row"><dt>Arrange</dt><dd>Only after cardiology registrar approval.</dd></div>
+        </dl>
+      </div>
+      <div class="investigation-option">
+        <strong class="investigation-title">Myocardial perfusion scan</strong>
+        <dl class="investigation-rows">
+          <div class="investigation-row"><dt>Best fit</dt><dd>Often a good choice for patients unable to exercise.</dd></div>
+          <div class="investigation-row"><dt>Check</dt><dd>Withhold beta-blocker and avoid caffeine for 12 h before the test.</dd></div>
+          <div class="investigation-row"><dt>Arrange</dt><dd>Call nuclear medicine to arrange.</dd></div>
+        </dl>
+      </div>
+      <div class="investigation-option">
+        <strong class="investigation-title">Stress echo</strong>
+        <dl class="investigation-rows">
+          <div class="investigation-row"><dt>Best fit</dt><dd>Exercise stress echo requires treadmill or cycle ability; dobutamine is an alternative.</dd></div>
+          <div class="investigation-row"><dt>Value</dt><dd>Provides additional cardiac structure and function information.</dd></div>
+          <div class="investigation-row"><dt>Arrange</dt><dd>Order transthoracic exercise stress echo on Cerner and call Cardiac Investigations.</dd></div>
+        </dl>
+      </div>
+    </div>
+  </details>`;
+}
+
+function lowRiskFollowUp(heart){
+  const heartLine = heart===null
+    ? '<li>HEART is recommended as a discharge checkpoint, especially for junior medical staff, but is not required for the hs-troponin algorithm.</li>'
+    : heart>=4
+      ? '<li>HEART ≥4: discuss with a senior ED registrar or consultant before discharge; cardiology outpatient referral may be required.</li>'
+      : '<li>HEART &lt;4 supports discharge to GP care when ECG and clinical assessment remain reassuring.</li>';
+  const observationLine = heart===null
+    ? '<li>If low risk was reached after intermediate observation, HEART ≤3 usually requires no further follow-up; higher-risk patients need senior ED decision-making.</li>'
+    : heart>=4
+      ? '<li>If low risk was reached after intermediate observation with HEART ≥4, discuss with a senior ED clinician; cardiology discussion, admission, or early outpatient testing may be required.</li>'
+      : '<li>If low risk was reached after intermediate observation and HEART ≤3, no further follow-up is usually required.</li>';
+  return followUpPanel(
+    'Low risk follow-up',
+    'ok',
+    `<ul class="followup-list">
+      <li>If ECG and clinical assessment are reassuring, guideline pathway supports discharge/GP care.</li>
+      ${heartLine}
+      ${observationLine}
+    </ul>`
+  );
+}
+
+function intermediateFollowUp(){
+  return followUpPanel(
+    'Intermediate risk follow-up',
+    'warn',
+    `<div class="followup-action-list">
+      <div class="followup-action"><strong>Discuss</strong><span>Senior ED clinician; consider Cardiology discussion.</span></div>
+      <div class="followup-action"><strong>If discharging</strong><span>Early ischaemia testing within days plus cardiologist follow-up.</span></div>
+      <div class="followup-action"><strong>Before discharge</strong><span>Early outpatient testing requires cardiology registrar discussion.</span></div>
+      <div class="followup-action"><strong>Default route</strong><span>Chest Pain Nurse Provided Clinic via ED Referral to Heart Centre unless ED consultant/Cardiology makes another plan.</span></div>
+      <div class="followup-action"><strong>Alternatives</strong><span>Private cardiologist with handover and confirmed appointment where possible; GP follow-up only exceptional with ED consultant or cardiology registrar approval.</span></div>
+    </div>`,
+    outpatientTestingOptions()
+  );
+}
+
+function highRiskFollowUp(){
+  return followUpPanel(
+    'High risk disposition',
+    'bad',
+    `<ul class="followup-list">
+      <li>Refer for Cardiology admission or inpatient testing according to the ACS pathway.</li>
+      <li>Outpatient follow-up is not the usual pathway; it is only occasional and should follow in-person cardiology registrar review.</li>
+    </ul>`
+  );
+}
+
+function pendingFollowUp(message='Complete the troponin pathway before choosing outpatient follow-up or investigations.'){
+  return followUpPanel(
+    'Follow-up pending final risk status',
+    'info',
+    `<ul class="followup-list">
+      <li>${message}</li>
+      <li>If symptoms recur or escalate, involve a senior ED clinician and consider additional hs-troponin and repeat ECG.</li>
+      <li>Ongoing or crescendo typical cardiac pain should override reassuring troponin logic and prompt senior clinician ± Cardiology discussion.</li>
+    </ul>`
+  );
+}
+
+function setFollowUpGuidance(kind, options={}){
+  const section = $('followUpSection');
+  const output = $('followUpOutput');
+  if(!section || !output) return;
+  if(kind === 'hidden'){
+    section.style.display = 'none';
+    output.innerHTML = '';
+    return;
+  }
+  section.style.display = 'flex';
+  if(kind === 'low'){
+    output.innerHTML = lowRiskFollowUp(options.heart ?? null);
+    return;
+  }
+  if(kind === 'intermediate'){
+    output.innerHTML = intermediateFollowUp();
+    return;
+  }
+  if(kind === 'high'){
+    output.innerHTML = highRiskFollowUp();
+    return;
+  }
+  output.innerHTML = pendingFollowUp(options.message);
+}
+
+function syncOnsetModeButtons(){
+  const mode = onsetMode();
+  [
+    ['onsetModeAtBtn', 'at'],
+    ['onsetModeSinceBtn', 'since']
+  ].forEach(([id, value]) => {
+    const btn = $(id);
+    if(!btn) return;
+    btn.className = value === mode ? 'segmented-btn active' : 'segmented-btn';
+    btn.setAttribute('aria-pressed', value === mode ? 'true' : 'false');
+  });
+}
+
+function setOnsetMode(mode){
+  $('onsetMode').value = mode;
+  updateOnsetModeUI();
+}
+
+function updateSerialFieldState(){
+  const a = currentAssay();
+  const onsetMin = presentationOnsetMinutes();
+  const t0 = n($('t0').value), t1 = n($('t1').value), t3 = n($('t3').value);
+  const singleSampleRuleOut = onsetMin!==null && onsetMin>120 && t0!==null && t0<a.lodSingleRuleOut;
+  const ruleInAtZero = t0!==null && t0>=a.ruleInAbs;
+  const ruleInAtSecond = t0!==null && t1!==null && Math.abs(t1 - t0) >= a.ruleInDelta;
+  const setSampleState = (id, state) => {
+    const field = $(id);
+    if(!field) return;
+    field.className = `field sample-card sample-${state}`;
+  };
+  setSampleState('t0Field', t0===null ? 'active' : 'complete');
+  if(singleSampleRuleOut || ruleInAtZero){
+    setSampleState('t1Field', 'muted');
+    setSampleState('t3Field', 'muted');
+  } else if(t0===null){
+    setSampleState('t1Field', 'future');
+    setSampleState('t3Field', 'future');
+  } else if(t1===null){
+    setSampleState('t1Field', 'active');
+    setSampleState('t3Field', 'future');
+  } else if(ruleInAtSecond){
+    setSampleState('t1Field', 'complete');
+    setSampleState('t3Field', 'muted');
+  } else if(t3===null){
+    setSampleState('t1Field', 'complete');
+    setSampleState('t3Field', 'active');
+  } else {
+    setSampleState('t1Field', 'complete');
+    setSampleState('t3Field', 'complete');
+  }
+  ['t1','t3'].forEach(id => {
+    const input = $(id);
+    if(!input) return;
+    input.placeholder = (singleSampleRuleOut || ruleInAtZero || ruleInAtSecond) ? 'not required' : 'leave blank until due';
+  });
+}
+
+function dueCallout(label, time, intervalText){
+  return `<div class="due-callout"><strong>${label} due at ${time}</strong><span>${intervalText} from the 0h troponin, not from the previous sample.</span></div>`;
+}
+
+function sampleTimingAssessment(elapsedMinutes, expectedMinutes, label){
+  if(elapsedMinutes==null) return null;
+  const tolerance = 10;
+  const latest = expectedMinutes + tolerance;
+  if(elapsedMinutes < expectedMinutes){
+    return {
+      cls: 'warn',
+      html: `<strong>Timing check:</strong> 0→${label} interval is ${elapsedMinutes} min. This is before the recommended ${label} from the 0h troponin; do not apply interval-dependent rule-out logic yet.`
+    };
+  }
+  if(elapsedMinutes > latest){
+    const minutesSaved = elapsedMinutes - expectedMinutes;
+    return {
+      cls: 'ok',
+      html: `<strong>Timing check:</strong> 0→${label} interval is ${elapsedMinutes} min. Meets the required interval; an on-target ${label} sample could have supported disposition ${minutesSaved} min earlier.`
+    };
+  }
+  return {
+    cls: 'ok',
+    html: `<strong>Timing check:</strong> 0→${label} interval is ${elapsedMinutes} min. Timing meets the recommended ${label} interval from the 0h troponin.`
+  };
+}
+
+function applySampleTimingCheck(id, assessment){
+  const el = $(id);
+  if(!el) return;
+  if(!assessment){
+    el.hidden = true;
+    el.innerHTML = '';
+    el.className = 'sample-timing-check';
+    return;
+  }
+  el.hidden = false;
+  el.className = `sample-timing-check ${assessment.cls}`;
+  el.innerHTML = assessment.html;
+}
+
+function updateSampleTimingChecks(){
+  const includeTimes = $('includeTimes');
+  const timesVisible = !includeTimes || includeTimes.checked;
+  const t0 = n($('t0').value);
+  const onsetMin = presentationOnsetMinutes();
+  const t0Time = getSampleTime('t0Time');
+  const t1Time = getSampleTime('t1Time');
+  const t3Time = getSampleTime('t3Time');
+  if(!timesVisible || t0===null || !t0Time){
+    applySampleTimingCheck('t1TimingCheck', null);
+    applySampleTimingCheck('t3TimingCheck', null);
+    return;
+  }
+  const useTwoHour = t0 < 5 && onsetMin!==null && onsetMin <= 60;
+  const expectedFirstInterval = useTwoHour ? 120 : 60;
+  const firstLabel = useTwoHour ? '2 h' : '1 h';
+  applySampleTimingCheck(
+    't1TimingCheck',
+    sampleTimingAssessment(minutesDiff(t1Time, t0Time), expectedFirstInterval, firstLabel)
+  );
+  applySampleTimingCheck(
+    't3TimingCheck',
+    sampleTimingAssessment(minutesDiff(t3Time, t0Time), 180, '3 h')
+  );
+}
+
 function appendFirstIntervalMessages(elapsedMinutes, expectedMinutes){
   if(elapsedMinutes==null) return;
   const label = expectedMinutes === 120 ? '2' : '1';
   const tolerance = 10;
+  const latest = expectedMinutes + tolerance;
   $('output').innerHTML += line(`<div class="help">Actual 0→${label} h interval = ${elapsedMinutes} min</div>`, 'info');
-  if(elapsedMinutes < expectedMinutes - tolerance || elapsedMinutes > expectedMinutes + tolerance){
-    $('output').innerHTML += line(`<div>${label} h sample at ${elapsedMinutes} min — outside ideal ${label} h ± ${tolerance} min</div>`, 'warn');
+  if(elapsedMinutes < expectedMinutes){
+    $('output').innerHTML += line(`<div>${label} h sample was taken early at ${elapsedMinutes} min. Do not apply interval-dependent rule-out until the ${label} h window is reached.</div>`, 'warn');
+  } else if(elapsedMinutes > latest){
+    const minutesSaved = elapsedMinutes - expectedMinutes;
+    $('output').innerHTML += line(`<div>${label} h sample met the required interval. An on-target ${label} h sample could have supported disposition ${minutesSaved} min earlier.</div>`, 'ok');
   }
-}
-
-function resolveOnsetReferenceTime(t0Val, t0Time, t1Val, t1Time, t3Val, t3Time){
-  if(t0Val!==null && t0Time) return t0Time;
-  if(t1Val!==null && t1Time) return t1Time;
-  if(t3Val!==null && t3Time) return t3Time;
-  return null;
 }
 
 function updateAssayUI(){
   const a = currentAssay();
-  $('sexLabel').textContent =
-    `Sex for 99th centile (${a===ALINITY ? 'Alinity: ♂ 25 / ♀ 15' : 'POC: ♂ 26 / ♀ 14'})`;
+  $('sexLabel').textContent = '99th centile range';
   if ($('z99Helper')) $('z99Helper').textContent = a===ALINITY ? 'Alinity: male 25 ng/L, female 15 ng/L.' : 'POC: male 26 ng/L, female 14 ng/L.';
-  $('z99Note').textContent = `Current 99th = ${z99()} ng/L`;
-  // Early note only applicable to Alinity
+  $('z99Note').classList.toggle('reference-note', $('sex').value === 'lower');
+  $('z99Note').innerHTML = $('sex').value === 'lower'
+    ? `Current 99th = ${z99()} ng/L.<span class="guideline-note">Alfred guideline: use the lower female reference range for transgender patients or when the sex-specific range is uncertain.</span>`
+    : `Current 99th = ${z99()} ng/L`;
+  // Figure 2/3 timing footnote applies to both low-initial pathways.
   const t0 = n($('t0').value);
-  const t1 = n($('t1').value);
-  const t3 = n($('t3').value);
-  const t0Time = getSampleTime('t0Time');
-  const t1Time = getSampleTime('t1Time');
-  const t3Time = getSampleTime('t3Time');
-  const referenceTime = resolveOnsetReferenceTime(t0, t0Time, t1, t1Time, t3, t3Time);
-  const onsetMin = minutesSinceOnset(referenceTime);
-  const showEarlyNote = (a===ALINITY && t0!==null && t0<5);
+  const onsetMin = presentationOnsetMinutes();
+  const showEarlyNote = (t0!==null && t0<5 && !(onsetMin!==null && onsetMin>120 && t0<a.lodSingleRuleOut));
   $('earlyNote').style.display = showEarlyNote ? 'block' : 'none';
-  const useTwoHourLabel = (a===ALINITY && t0!==null && t0<5 && onsetMin!==null && onsetMin<60);
-  $('t1label').textContent = useTwoHourLabel
-    ? 'Second sample (2 h from 0h troponin)'
-    : 'Second sample (1 h from 0h troponin)';
+  updateSerialFieldState();
+  const useTwoHourLabel = (t0!==null && t0<5 && onsetMin!==null && onsetMin<=60);
+  if ($('t1Step')) $('t1Step').textContent = useTwoHourLabel ? '2h' : '1h';
+  $('t1label').textContent = 'Next sample (ng/L)';
   computeAdvice();
 }
 ['assay','sex','onsetHours','onsetMins','t0','t0Time'].forEach(id => $(id).addEventListener('input', updateAssayUI));
 ['onsetHours','onsetMins'].forEach(id => $(id).addEventListener('input', setTropSectionVisibility));
 $('onsetMode').addEventListener('change', updateOnsetModeUI);
+if ($('onsetModeAtBtn')) $('onsetModeAtBtn').addEventListener('click', ()=>setOnsetMode('at'));
+if ($('onsetModeSinceBtn')) $('onsetModeSinceBtn').addEventListener('click', ()=>setOnsetMode('since'));
 $('onsetAt').addEventListener('input', setTropSectionVisibility);
 ['t0','t1','t3','t0Time','t1Time','t3Time','heart'].forEach(id=>{
   const el = $(id);
@@ -701,11 +1718,55 @@ $('onsetAt').addEventListener('input', setTropSectionVisibility);
 updateOnsetModeUI();
 
 /* Compute */
+function dischargeGuidance(heart){
+  if(heart===null){
+    return '<div class="help">HEART is recommended as an additional discharge checkpoint, particularly for junior medical staff. If HEART is ≥ 4, discuss with a senior ED registrar or consultant prior to discharge.</div>' + unstableAnginaReminder();
+  }
+  if(heart>=4){
+    return '<div class="help">HEART ≥ 4: discuss with a senior ED registrar or consultant prior to discharge; cardiology outpatient referral may be required.</div>' + unstableAnginaReminder();
+  }
+  return '<div class="help">HEART < 4: guideline supports discharge to GP care if ECG and clinical assessment remain reassuring.</div>' + unstableAnginaReminder();
+}
+
+function intermediateDispositionGuidance(heart){
+  if(heart!==null && heart<=3){
+    return '<div class="help">If the 3 h troponin is < sex-specific 99th percentile and HEART ≤ 3, this group can usually be discharged with no further follow up.</div>' + unstableAnginaReminder();
+  }
+  if(heart===null){
+    return '<div class="help">HEART is recommended as an additional checkpoint before discharge, but is not required to apply the hs-troponin algorithm.</div>' + unstableAnginaReminder();
+  }
+  return '<div class="help">Higher-risk patients should be discussed with the senior ED clinician; cardiology discussion, admission, or early outpatient testing may be required.</div>' + unstableAnginaReminder();
+}
+
+function appendThirdIntervalMessages(elapsed3){
+  if(elapsed3==null) return;
+  $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
+  if(elapsed3 < 180){
+    $('output').innerHTML += line(`<div>3 h sample was taken early at ${elapsed3} min. Do not apply 3 h rule-out logic until the 3 h window is reached.</div>`, 'warn');
+  } else if(elapsed3 > 190){
+    const minutesSaved = elapsed3 - 180;
+    $('output').innerHTML += line(`<div>3 h sample met the required interval. An on-target 3 h sample could have supported disposition ${minutesSaved} min earlier.</div>`, 'ok');
+  }
+}
+
+function writeWithTiming(html, cls, elapsed1, expectedFirstInterval, elapsed3){
+  $('output').innerHTML = line(html, cls);
+  appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
+  appendThirdIntervalMessages(elapsed3);
+}
+
 function computeAdvice(){
+  updateInputSummary();
+  updateSerialFieldState();
+  updateSampleTimingChecks();
   if (!hasOnset()){
+    setFollowUpGuidance('hidden');
     $('output').innerHTML = line(
-      `<h3>Enter ${onsetMode()==='at'?'time of symptom onset':'time since symptom onset'}</h3>`+
-      `<div class="help">${onsetMode()==='at'?'Provide the clock time of onset':'Provide hours and/or minutes'} to begin.</div>`,
+      advice(
+        `Enter ${onsetMode()==='at'?'time of symptom onset':'time since symptom onset at presentation'}`,
+        'The Alfred pathway depends on symptom timing at presentation.',
+        `${onsetMode()==='at'?'Provide the clock time of onset at presentation':'Provide hours and/or minutes at presentation'} to begin.`
+      ),
       'info'
     );
     return;
@@ -720,67 +1781,48 @@ function computeAdvice(){
   const t0Time = getSampleTime('t0Time');
   const t1Time = getSampleTime('t1Time');
   const t3Time = getSampleTime('t3Time');
-  const referenceTime = resolveOnsetReferenceTime(t0, t0Time, t1, t1Time, t3, t3Time);
-  const onsetMin = minutesSinceOnset(referenceTime);
+  const onsetMin = presentationOnsetMinutes();
   const elapsed1 = minutesDiff(t1Time, t0Time);
   const elapsed3 = minutesDiff(t3Time, t0Time);
-  const onsetAtT0 = t0Time
-    ? minutesSinceOnset(t0Time)
-    : (onsetMode()==='since' ? minutesSinceOnset() : null);
-  const onsetAtT1 = t1Time
-    ? minutesSinceOnset(t1Time)
-    : (onsetAtT0!==null && elapsed1!==null
-        ? onsetAtT0 + elapsed1
-        : (onsetMode()==='since' && t1!==null ? minutesSinceOnset() : null));
-  const earlyPresenterInitial = (a===ALINITY && t0 < 5) && (
-    (onsetAtT0!==null && onsetAtT0 < 60) ||
-    (onsetAtT0===null && onsetMin!==null && onsetMin < 60)
-  );
-  const earlyPresenterBeyond2h = earlyPresenterInitial && onsetAtT1!==null && onsetAtT1 >= 120;
+  const lowInitialTwoHourPath = t0!==null && t0 < 5 && onsetMin!==null && onsetMin <= 60;
+  const expectedFirstInterval = lowInitialTwoHourPath ? 120 : 60;
+  setFollowUpGuidance('pending');
 
   if (t0===null){
-    const a = currentAssay();
-    const onsetMinNow = minutesSinceOnset();
+    const onsetMinNow = presentationOnsetMinutes();
     let nextTimingMsg = '';
-    if (a===ALINITY){
-      if (onsetMinNow < 60){
-        nextTimingMsg = 'Plan a 1‑hour sample after the 0h troponin (if T0 returns <5 AND onset <60 min, the app will switch you to a 2‑hour sample).';
-      } else {
-        nextTimingMsg = 'Plan a 1‑hour sample after the 0h troponin.';
-      }
+    if (onsetMinNow <= 60){
+      nextTimingMsg = 'If the 0h troponin is <5 ng/L, the serial sample is 2 h after the 0h troponin. Otherwise use the 1 h pathway.';
     } else {
-      nextTimingMsg = 'Plan a 1‑hour sample after the 0h troponin.';
-    }
-    // Advisory: if close to the 60 min cutoff, suggest timing T0 at 60 min (if clinically safe)
-    let near60Msg = '';
-    if (onsetMinNow !== null && onsetMinNow < 60){
-      const minsTo60 = 60 - onsetMinNow;
-      if (minsTo60 <= 10){
-        near60Msg = `<div class="help">You are ${minsTo60} min short of 60 min since onset. If clinically safe, consider drawing the 0h troponin at the 60‑min mark to use the 1 h pathway (otherwise proceed now; early‑presenter rule may require a 2 h sample if T0 &lt; 5).</div>`;
-      }
+      nextTimingMsg = 'Plan a 1 h sample after the 0h troponin if serial testing is required.';
     }
     let singleRuleOutMsg = '';
-    if (onsetMinNow !== null && onsetMinNow >= 120) {
-      singleRuleOutMsg = '<div class="result ok" style="margin-top:8px"><strong>Single‑sample rule‑out possible:</strong> if the 0h troponin returns &lt; 4 ng/L, this patient can be cleared on a single troponin.</div>';
+    if (onsetMinNow !== null && onsetMinNow > 120) {
+      singleRuleOutMsg = '<div class="result ok" style="margin-top:8px"><strong>Single-sample rule-out possible:</strong> if the 0h troponin is &lt;4 ng/L.</div>';
+    } else {
+      singleRuleOutMsg = '<div class="help">Presentation ≤2 h from symptom onset requires serial troponins with at least one troponin taken &gt;2 h from symptom onset.</div>';
     }
-    $('output').innerHTML = line(`<h3>Step 1 — Take 0h troponin now</h3>
-      <div>Assay: ${a.name}. Symptom onset: ${Math.floor(onsetMinNow/60)} h ${onsetMinNow%60} min ago.</div>
-      <div><strong>Next sample:</strong> ${nextTimingMsg}</div>
-      ${near60Msg}
-      ${singleRuleOutMsg}
-      <div class="help">Enter the 0h troponin result when available to continue.</div>`, 'info');
+    $('output').innerHTML = line(advice(
+      'Step 1 - take 0h troponin now',
+      `Assay: ${a.name}. Symptom onset at presentation: ${Math.floor(onsetMinNow/60)} h ${onsetMinNow%60} min.`,
+      `${nextTimingMsg} Enter the 0h troponin result when available to continue.`,
+      singleRuleOutMsg
+    ), 'info');
+    setFollowUpGuidance('pending', { message:'Enter the 0h troponin result and complete any due serial sampling before choosing follow-up.' });
     return;
   }
 
   /* Single-sample rule-out (both assays) */
-  if (onsetMin>=120 && t0 < a.lodSingleRuleOut){
+  if (onsetMin>120 && t0 < a.lodSingleRuleOut){
     if (t1===null){
-      $('output').innerHTML = line(`<h3>Rule-out (single sample)</h3>
-        <div>Onset ≥ 2 h and 0h troponin ${fmt(t0)} &lt; ${a.lodSingleRuleOut} → discharge if ECG normal.</div>
-        <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok');
-      appendFirstIntervalMessages(elapsed1, 60);
-      if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-      if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+      $('output').innerHTML = line(advice(
+        'Low risk - single-sample rule-out',
+        `Presentation &gt;2 h from symptom onset and 0h troponin ${fmt(t0)} &lt; ${a.lodSingleRuleOut} ng/L.`,
+        'If ECG and clinical workflow are reassuring, guideline pathway supports discharge/GP care.',
+        dischargeGuidance(heart)
+      ), 'ok');
+      appendThirdIntervalMessages(elapsed3);
+      setFollowUpGuidance('low', { heart });
       return;
     } else {
       // Note: 1 h sample available — interpret both values using 0/1 h algorithm
@@ -789,73 +1831,78 @@ function computeAdvice(){
     }
   }
 
-  /* Early-presenter branch (only documented for Alinity, t0<5) */
-  if (a===ALINITY && t0 < 5){
-    const earlyPathActive = earlyPresenterInitial && !earlyPresenterBeyond2h;
-    const expectedFirstInterval = earlyPathActive ? 120 : 60;
+  /* Low-initial branch (Figure 2/3: 0h <5 and assay-specific small delta) */
+  if (t0 < 5){
     if (t1===null){
-      const msg = earlyPresenterInitial ? 'Take a 2-hour sample after the 0h troponin.' : 'Take a 1-hour sample after the 0h troponin.';
+      const msg = lowInitialTwoHourPath ? 'Take a 2 h sample after the 0h troponin.' : 'Take a 1 h sample after the 0h troponin.';
       let dueLine = '';
-      const nextMins = earlyPresenterInitial ? 120 : 60;
       if (t0Time){
-        const due = addMinutes(t0Time, nextMins);
-        const sinceTxt = nextMins === 120 ? '(2 h since the 0h troponin)' : '(1 h since the 0h troponin)';
-        dueLine = `<div class="help">Next troponin due at ${fmtTime(due)} ${sinceTxt}</div>`;
+        const due = addMinutes(t0Time, expectedFirstInterval);
+        const dueLabel = expectedFirstInterval === 120 ? '2 h sample' : '1 h sample';
+        const intervalText = expectedFirstInterval === 120 ? '2 h' : '1 h';
+        dueLine = dueCallout(dueLabel, fmtTime(due), intervalText);
       } else {
-        dueLine = `<div class="help">Enter the T0 sample time to calculate an exact due time.</div>`;
+        dueLine = `<div class="help">Enter the 0h sample time to calculate an exact due time.</div>`;
       }
-      const heading = earlyPresenterInitial ? 'Early presenter (0/2-hour)' : 'Low initial troponin pathway (0/1 h)';
-      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>${heading}</h3><div>${msg}</div>${dueLine}`, 'info'); }
+      const heading = lowInitialTwoHourPath ? 'Low initial troponin (0/2 h)' : 'Low initial troponin (0/1 h)';
+      { const note = out.join(''); $('output').innerHTML = note + line(advice(
+        heading,
+        `0h troponin is &lt;5 ng/L and presentation timing determines the serial sample interval.`,
+        msg,
+        dueLine
+      ), 'info'); }
+      setFollowUpGuidance('pending', { message:`Complete the ${expectedFirstInterval === 120 ? '2 h' : '1 h'} sample from the 0h troponin before choosing follow-up.` });
       return;
     }
-    if (earlyPathActive && elapsed1 !== null && elapsed1 < expectedFirstInterval - 10){
+    if (lowInitialTwoHourPath && elapsed1 === null){
+      { const note = out.join(''); $('output').innerHTML = note + line(advice(
+        'Repeat sample timing required',
+        'Presentation was ≤60 min from onset with 0h troponin &lt;5 ng/L, so the low-initial pathway requires a 2 h serial sample.',
+        'Record the 0h and second sample times, or wait until the 2 h sample is available before applying the low-risk delta threshold.'
+      ), 'warn'); }
+      setFollowUpGuidance('pending', { message:'Record the 0h and 2 h sample times before applying the low-initial early-presenter pathway.' });
+      return;
+    }
+    if (lowInitialTwoHourPath && elapsed1 < expectedFirstInterval - 10){
       let timingHelp = '';
       if (t0Time){
         const dueAt = addMinutes(t0Time, expectedFirstInterval);
-        timingHelp = `<div class="help">2 h sample due at ${fmtTime(dueAt)} (2 h since the 0h troponin)</div>`;
+        timingHelp = dueCallout('2 h sample', fmtTime(dueAt), '2 h');
       } else {
         timingHelp = `<div class="help">Enter the T0 sample time to calculate the 2 h due time.</div>`;
       }
-      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Second sample too early</h3><div>Recorded interval is ${elapsed1} min after the 0h troponin. Early presenters require a 2 h sample (120 ± 10 min) before interpreting results. Obtain a repeat sample at 2 h and re-enter the value.</div>${timingHelp}`, 'warn'); }
+      { const note = out.join(''); $('output').innerHTML = note + line(advice(
+        'Second sample too early',
+        `Recorded interval is ${elapsed1} min after the 0h troponin; this pathway needs a 2 h sample before interpretation.`,
+        'Obtain a repeat sample at 2 h and re-enter the value.',
+        timingHelp
+      ), 'warn'); }
+      setFollowUpGuidance('pending', { message:'The serial sample is too early for final disposition; repeat at the required 2 h interval from 0h.' });
       return;
     }
     const d01 = Math.abs(t1 - t0);
-    if (d01 < a.earlyDeltaRuleOut){
-      const bothUnderFive = t1 < 5 && t0 < 5;
-      if (earlyPresenterInitial && !earlyPresenterBeyond2h){
-        { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Early presenter (0/2-hour)</h3>
-        <div>Δ 0→2 h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} with 0h troponin &lt; 5 → discharge if ECG normal.</div>
-        <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok'); }
-        appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
-        if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-        if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
-        return;
-      }
-      if (earlyPresenterInitial && earlyPresenterBeyond2h && bothUnderFive){
-        { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Early presenter — now &gt;2 h since onset (standard rule-out criteria applied)</h3>
-        <div>Now ≥ 2 hours since onset — meets early-presenter rule-out criteria. Δ 0→1 h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} ng/L and both values &lt; 5 ng/L → rule-out confirmed.</div>
-        <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok'); }
-        appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
-        if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-        if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
-        return;
-      }
-      if (!earlyPresenterInitial){
-        { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-out (0/1 h)</h3>
-        <div>Δ 0→1 h = ${fmt(d01)} &lt; ${a.earlyDeltaRuleOut} with 0h troponin &lt; 5 → discharge if ECG normal.</div>
-        <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok'); }
-        appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
-        if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-        if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
-        return;
-      }
-    }
-    if (d01 >= a.ruleInDelta || t1 >= a.ruleInAbs){
-      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-in (0/1 h)</h3>
-        <div>${d01>=a.ruleInDelta?`Δ ≥ ${a.ruleInDelta} ng/L`:`value ≥ ${a.ruleInAbs} ng/L`} → treat as ACS; Cardiology admission.</div>`, 'bad'); }
+    const deltaLabel = expectedFirstInterval === 120 ? '0→2 h' : '0→1 h';
+    if (d01 < a.lowDeltaRuleOut){
+      { const note = out.join(''); $('output').innerHTML = note + line(advice(
+        'Low risk',
+        `0h troponin &lt;5 ng/L and Δ ${deltaLabel} = ${fmt(d01)} &lt; ${a.lowDeltaRuleOut} ng/L.`,
+        'If ECG and clinical workflow are reassuring, guideline pathway supports discharge/GP care.',
+        dischargeGuidance(heart)
+      ), 'ok'); }
       appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
-      if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-      if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+      appendThirdIntervalMessages(elapsed3);
+      setFollowUpGuidance('low', { heart });
+      return;
+    }
+    if (d01 >= a.ruleInDelta){
+      { const note = out.join(''); $('output').innerHTML = note + line(advice(
+        'High risk - rule-in',
+        `Δ ${deltaLabel} ≥ ${a.ruleInDelta} ng/L.`,
+        'Refer for Cardiology admission.'
+      ), 'bad'); }
+      appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
+      appendThirdIntervalMessages(elapsed3);
+      setFollowUpGuidance('high');
       return;
     }
     // proceed to 3 h
@@ -863,9 +1910,15 @@ function computeAdvice(){
       let due3 = '';
       if (t0Time){
         const dueAt = addMinutes(t0Time, 180);
-        due3 = `<div class="help">3 h sample due at ${fmtTime(dueAt)} (3 h since the 0h troponin)</div>`;
+        due3 = dueCallout('3 h sample', fmtTime(dueAt), '3 h');
       }
-      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (0/1 h)</h3><div>Obtain 3 h sample (from the 0h troponin).</div>${due3}`, 'warn'); }
+      { const note = out.join(''); $('output').innerHTML = note + line(advice(
+        'Intermediate risk',
+        `0h troponin &lt;5 ng/L, but Δ ${deltaLabel} does not meet the low-risk threshold and does not meet rule-in threshold.`,
+        'Obtain a 3 h sample from the 0h troponin.',
+        due3
+      ), 'warn'); }
+      setFollowUpGuidance('pending', { message:'Complete the 3 h sample from the 0h troponin before arranging outpatient testing.' });
       return;
     }
     return eval3h(a, t0, t3, z, t0Time, t1Time, t3Time, elapsed1, elapsed3, expectedFirstInterval);
@@ -873,11 +1926,12 @@ function computeAdvice(){
 
   /* Immediate rule-in by absolute or delta if 1 h available (both assays) */
   if (t0 >= a.ruleInAbs || (t1!==null && Math.abs(t1 - t0) >= a.ruleInDelta)){
-    $('output').innerHTML = line(`<h3>Rule-in</h3>
-      <div>${t0>=a.ruleInAbs?`0h troponin ≥ ${a.ruleInAbs} ng/L`:`Δ ≥ ${a.ruleInDelta} ng/L`} → treat as ACS; Cardiology admission.</div>`, 'bad');
-    appendFirstIntervalMessages(elapsed1, 60);
-    if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-    if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+    writeWithTiming(advice(
+      'High risk - rule-in',
+      t0>=a.ruleInAbs ? `0h troponin ≥ ${a.ruleInAbs} ng/L.` : `Δ 0→1 h ≥ ${a.ruleInDelta} ng/L.`,
+      'Refer for Cardiology admission.'
+    ), 'bad', elapsed1, 60, elapsed3);
+    setFollowUpGuidance('high');
     return;
   }
 
@@ -888,61 +1942,95 @@ function computeAdvice(){
       let due1 = '';
       if (t0Time){
         const dueAt = addMinutes(t0Time, 60);
-        due1 = `<div class="help">1 h sample due at ${fmtTime(dueAt)} (1 h since the 0h troponin)</div>`;
+        due1 = dueCallout('1 h sample', fmtTime(dueAt), '1 h');
       } else {
         due1 = `<div class="help">Enter T0 sample time to calculate the 1 h due time.</div>`;
       }
-      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (observe)</h3><div>Take a 1-hour sample to assess Δ.</div>${due1}`, 'warn'); }
+      { const note = out.join(''); $('output').innerHTML = note + line(advice(
+        'Intermediate risk - observe',
+        `0h troponin is ${fmt(t0)} ng/L, within the ${a.name} intermediate band (${lowerInt}-${upperInt} ng/L).`,
+        'Take a 1 h sample to assess delta.',
+        due1
+      ), 'warn'); }
+      setFollowUpGuidance('pending', { message:'Take the 1 h sample and assess delta before choosing follow-up or investigations.' });
       return;
     }
     const d01 = Math.abs(t1 - t0);
     if (d01 >= a.ruleInDelta){
-      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Rule-in</h3><div>Δ 0→1 h ≥ ${a.ruleInDelta} ng/L → Cardiology.</div>`, 'bad'); }
+      { const note = out.join(''); $('output').innerHTML = note + line(advice(
+        'High risk - rule-in',
+        `Δ 0→1 h ≥ ${a.ruleInDelta} ng/L.`,
+        'Refer for Cardiology admission.'
+      ), 'bad'); }
       appendFirstIntervalMessages(elapsed1, 60);
-      if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-      if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+      appendThirdIntervalMessages(elapsed3);
+      setFollowUpGuidance('high');
       return;
     }
+    const eitherAbove99 = t0 > z || t1 > z;
     if (t3===null){
       let due3 = '';
       if (t0Time){
         const dueAt = addMinutes(t0Time, 180);
-        due3 = `<div class="help">3 h sample due at ${fmtTime(dueAt)} (3 h since the 0h troponin)</div>`;
+        due3 = dueCallout('3 h sample', fmtTime(dueAt), '3 h');
       }
-      { const note = out.join(''); $('output').innerHTML = note + line(`<h3>Intermediate (observe)</h3><div>Δ 0→1 h &lt; ${a.ruleInDelta} → obtain 3 h sample (from the 0h troponin).</div>${due3}`, 'warn'); }
+      const disposition = eitherAbove99
+        ? 'Either the 0h or 1 h value is above the sex-specific 99th percentile.'
+        : 'No value is above the sex-specific 99th percentile.';
+      const action = eitherAbove99
+        ? 'Refer to Cardiology; ESSU vs cubicles pending decision-making; measure further hs-troponin at 3 h.'
+        : 'ESSU appropriate; measure further hs-troponin at 3 h; discuss with senior ED clinician and consider outpatient testing.';
+      { const note = out.join(''); $('output').innerHTML = note + line(advice(
+        'Intermediate risk',
+        `0→1 h delta is ${fmt(d01)} ng/L, below the ${a.ruleInDelta} ng/L rule-in threshold. ${disposition}`,
+        action,
+        due3
+      ), 'warn'); }
+      setFollowUpGuidance('pending', { message:'Complete the 3 h sample from the 0h troponin before arranging outpatient testing.' });
       return;
     }
     return eval3h(a, t0, t3, z, t0Time, t1Time, t3Time, elapsed1, elapsed3);
   }
 
-  $('output').innerHTML = line(`<h3>Needs more information</h3><div>Enter due samples or review clinical status.</div>`,'info');
+  $('output').innerHTML = line(advice(
+    'Needs more information',
+    'The entered values do not yet map to a completed pathway state.',
+    'Enter due samples or review clinical status.'
+  ),'info');
+  setFollowUpGuidance('pending');
 }
 
 function eval3h(a, t0, t3, z99, t0Time, t1Time, t3Time, elapsed1, elapsed3, expectedFirstInterval=60){
   const d03 = Math.abs(t3 - t0);
   if (t3 >= a.ruleInAbs || d03 >= a.ruleInDelta){
-    $('output').innerHTML = line(`<h3>Rule-in at 3 h</h3>
-      <div>${t3>=a.ruleInAbs?`3 h ≥ ${a.ruleInAbs} ng/L`:`Δ 0→3 h ≥ ${a.ruleInDelta} ng/L`} → Cardiology.</div>`, 'bad');
-    appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
-    if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-    if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+    writeWithTiming(advice(
+      'High risk - rule-in at 3 h',
+      t3>=a.ruleInAbs ? `3 h troponin ≥ ${a.ruleInAbs} ng/L.` : `Δ 0→3 h ≥ ${a.ruleInDelta} ng/L.`,
+      'Refer to Cardiology.'
+    ), 'bad', elapsed1, expectedFirstInterval, elapsed3);
+    setFollowUpGuidance('high');
     return;
   }
+  const heart = n($('heart').value);
   if (t3 < z99 && d03 < a.ruleInDelta){
-    $('output').innerHTML = line(`<h3>Rule-out at 3 h</h3>
-      <div>3 h ${fmt(t3)} &lt; ${z99} and Δ 0→3 h ${fmt(d03)} &lt; ${a.ruleInDelta} → discharge if ECG normal.</div>
-      <div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'ok');
-    appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
-    if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-    if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
+    const followUpText = heart!==null && heart<=3
+      ? '<div class="help">HEART ≤ 3: this group can usually be discharged with no further follow up if ECG and clinical workflow remain reassuring.</div>' + unstableAnginaReminder()
+      : intermediateDispositionGuidance(heart);
+    writeWithTiming(advice(
+      'Low risk - rule-out at 3 h',
+      `3 h troponin ${fmt(t3)} &lt; ${z99} ng/L and Δ 0→3 h ${fmt(d03)} &lt; ${a.ruleInDelta} ng/L.`,
+      'If ECG and clinical workflow are reassuring, guideline pathway supports discharge/GP care.',
+      followUpText
+    ), 'ok', elapsed1, expectedFirstInterval, elapsed3);
+    setFollowUpGuidance('low', { heart });
     return;
   }
-  $('output').innerHTML = line(`<h3>Elevated but stable</h3>
-    <div>Δ 0→3 h &lt; ${a.ruleInDelta}. Consider Cardiology review and outpatient testing.</div>`, 'warn');
-  appendFirstIntervalMessages(elapsed1, expectedFirstInterval);
-  if (elapsed3) $('output').innerHTML += line(`<div class="help">Actual 0→3 h interval = ${elapsed3} min</div>`, 'info');
-  if (elapsed3 && (elapsed3 < 170 || elapsed3 > 190)) $('output').innerHTML += line(`<div>3 h sample at ${elapsed3} min — outside ideal 180 ± 10 min</div>`, 'warn');
-  $('output').innerHTML += line(`<div class="help">If HEART ≥ 4 or concern for unstable angina, discuss with a senior ED clinician prior to discharge.</div>`, 'info');
+  writeWithTiming(advice(
+    'Intermediate risk after 3 h',
+    '3 h troponin remains above the sex-specific 99th percentile or does not meet the guideline 3 h rule-out criteria.',
+    'Discuss with senior ED clinician and Cardiology; admission or early outpatient testing may be required.'
+  ), 'warn', elapsed1, expectedFirstInterval, elapsed3);
+  setFollowUpGuidance('intermediate');
 }
 
 /* Troponin time wrappers toggle */
@@ -950,8 +2038,9 @@ function toggleTimeWrappers(){
   const show = $('includeTimes') && $('includeTimes').checked;
   ['t0TimeWrapper','t1TimeWrapper','t3TimeWrapper'].forEach(id => {
     const el = $(id);
-    if (el) el.style.display = show ? 'block' : 'none';
+    if (el) el.style.display = show ? 'flex' : 'none';
   });
+  updateSampleTimingChecks();
 }
 
 function initRecommendationToggle(){
@@ -967,11 +2056,18 @@ function initRecommendationToggle(){
   });
 }
 
+function initInlineRecommendationSync(){
+  syncInlineRecommendationFromOutput();
+  if (window.MutationObserver && $('output')) {
+    const observer = new MutationObserver(syncInlineRecommendationFromOutput);
+    observer.observe($('output'), { childList:true, subtree:true, characterData:true });
+  }
+}
+
 /* Initial UI state */
 function initUI(){
   attachTimeInputHandlers();
   updateAssayUI();
-  $('z99Note').textContent = `Current 99th = ${z99()} ng/L`;
   // Event listener for includeTimes
   const includeTimesEl = $('includeTimes');
   if (includeTimesEl) includeTimesEl.addEventListener('change', toggleTimeWrappers);
@@ -1007,6 +2103,7 @@ function initUI(){
   // call auto troponin score at load in case the toggle is on
   heartAutoTroponinScore();
   initRecommendationToggle();
+  initInlineRecommendationSync();
 }
 initUI();
 </script>

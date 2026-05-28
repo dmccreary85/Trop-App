@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trop-app-v3';
+const CACHE_NAME = 'trop-app-v47';
 const ASSETS = [
   './',
   './index.html',
