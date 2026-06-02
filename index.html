@@ -2,10 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Suspected ACS Troponin Workflow (Alinity + POC)</title>
 <meta name="theme-color" content="#0b2538" />
 <link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Troponin" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <style>
   :root{
     --bg:#071827;
@@ -452,6 +457,49 @@
     margin-top:8px;
     padding:0;
   }
+  .workup-plan{
+    border:1px solid rgba(114,210,208,0.5);
+    border-left:6px solid var(--blue);
+    border-radius:var(--radius-input);
+    background:#0c1725;
+    box-shadow:0 8px 18px rgba(0,0,0,0.22);
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-bottom:4px;
+  }
+  .workup-plan.ok{border-left-color:var(--green);border-color:rgba(25,179,107,0.45)}
+  .workup-plan.warn{border-left-color:var(--amber);border-color:rgba(230,162,60,0.55)}
+  .workup-plan[hidden]{display:none}
+  .workup-plan-label{
+    color:#b8c8dc;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+  }
+  .workup-plan-title{
+    font-size:17px;
+    font-weight:700;
+    line-height:1.25;
+  }
+  .workup-plan-body{
+    color:var(--text);
+    font-size:15px;
+    line-height:1.4;
+  }
+  .header-side{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:8px;
+  }
+  .recommendation-actions{
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
   .btn{appearance:none;border:1px solid var(--control-border);background:var(--input-bg);color:var(--input-text);padding:12px 16px;border-radius:var(--radius-input);cursor:pointer;min-height:48px;font-size:16px}
   .btn.primary{background:#173f5b;border-color:rgba(114,210,208,0.32);color:var(--text)}
   .btn:hover{border-color:var(--control-border-hover)}
@@ -759,6 +807,7 @@
   @media (max-width: 720px){
     .header-inner{flex-direction:column}
     .header-badges{justify-content:flex-start}
+    .header-side{align-items:flex-start}
     main{padding:12px;gap:14px}
     .card{padding:12px}
     .clinical-note{
@@ -808,9 +857,12 @@
         <div class="header-note">Decision support using Alfred guideline v5 for assay-specific hs-troponin timing, thresholds, and disposition prompts.</div>
       </div>
     </div>
-    <div class="header-badges" aria-label="App status">
-      <span class="badge">Decision support</span>
-      <span class="badge">Guideline v5</span>
+    <div class="header-side">
+      <div class="header-badges" aria-label="App status">
+        <span class="badge">Decision support</span>
+        <span class="badge">Guideline v5</span>
+      </div>
+      <button class="btn ghost" id="clearBtn" type="button">New patient</button>
     </div>
   </div>
 </header>
@@ -885,6 +937,7 @@
       </div>
     </div>
       <div class="sample-list">
+        <div class="workup-plan" id="workupPlan" hidden></div>
         <div class="field sample-card sample-active" id="t0Field">
           <div class="sample-heading">
             <span class="sample-step">0h</span>
@@ -1086,10 +1139,13 @@
   <section class="recommendation-card" id="recommendation">
     <div class="recommendation-header">
       <h2>Recommendation</h2>
-      <button class="btn ghost" id="recommendationToggle" type="button">Hide details</button>
+      <div class="recommendation-actions">
+        <button class="btn ghost" id="copySummaryBtn" type="button">Copy summary</button>
+        <button class="btn ghost" id="recommendationToggle" type="button">Hide details</button>
+      </div>
     </div>
     <div class="input-summary" id="inputSummary"></div>
-    <div id="output"></div>
+    <div id="output" aria-live="polite"></div>
   </section>
 
 </main>
@@ -1128,7 +1184,7 @@ function heartAutoTroponinScore(){
   computeAdvice();
 }
 /* PWA registration */
-const SW_VERSION = 'v58';
+const SW_VERSION = 'v59';
 if ('serviceWorker' in navigator) {
   const swUrl = `./sw.js?ver=${SW_VERSION}`;
   navigator.serviceWorker.register(swUrl).then(registration => {
@@ -1194,6 +1250,11 @@ const n = v => {
 const fmt = x => (x==null||isNaN(x))?'—':String(Math.round(x));
 let presentationReferenceDate = null;
 let presentationTimingSignature = '';
+// Structured recommendation captured from the latest advice()/line() render so the
+// inline card and handover summary can be built without re-parsing generated HTML.
+let lastRecommendation = null;
+let adviceJustBuilt = false;
+let pendingDue = null;
 
 // --- Helper functions for 24-hour time inputs ---
 function parseTimeValue(value){
@@ -1408,7 +1469,14 @@ function z99(){
   const s = $('sex').value;
   return a.z99[s] || a.z99.female;
 }
-function line(html, cls='info'){ return `<div class="result ${cls}">${html}</div>`; }
+function line(html, cls='info'){
+  // The first line() that wraps a freshly built advice() owns the recommendation tone.
+  if(adviceJustBuilt && lastRecommendation){
+    lastRecommendation.tone = cls;
+    adviceJustBuilt = false;
+  }
+  return `<div class="result ${cls}">${html}</div>`;
+}
 
 function updateInputSummary(){
   const el = $('inputSummary');
@@ -1433,6 +1501,10 @@ function updateInputSummary(){
 }
 
 function advice(title, why, action, extra=''){
+  // Record the structured recommendation; pendingDue (if any) was just set by dueCallout().
+  lastRecommendation = { title, why, action, tone: 'info', due: pendingDue };
+  adviceJustBuilt = true;
+  pendingDue = null;
   return `<h3>${title}</h3>
     <div class="advice-sections">
       <div class="advice-row"><strong>Action:</strong> ${action}</div>
@@ -1482,45 +1554,37 @@ function inlineRecommendationStage(){
 
 function placeInlineRecommendation(inline){
   const stage = inlineRecommendationStage();
-  if(stage.anchor && stage.anchor.nextElementSibling !== inline){
+  if(stage.anchor && typeof stage.anchor.insertAdjacentElement === 'function' && stage.anchor.nextElementSibling !== inline){
     stage.anchor.insertAdjacentElement('afterend', inline);
   }
   return stage.label;
 }
 
-function syncInlineRecommendationFromOutput(){
+function renderInlineRecommendation(){
   const inline = $('inlineRecommendation');
-  const output = $('output');
-  if(!inline || !output) return;
-  const html = output.innerHTML || '';
-  const title = stripHtml((html.match(/<h3>([\s\S]*?)<\/h3>/i) || [])[1]);
-  const action = stripHtml((html.match(/<strong>Action:<\/strong>\s*([\s\S]*?)(?:<\/div>|<div class="advice-row rationale")/i) || [])[1]);
-  const dueTitle = stripHtml((html.match(/<div class="due-callout"><strong>([\s\S]*?)<\/strong>/i) || [])[1]);
-  const dueNote = stripHtml((html.match(/<div class="due-callout">[\s\S]*?<span>([\s\S]*?)<\/span>/i) || [])[1]);
+  if(!inline) return;
+  const rec = lastRecommendation;
   const hasTroponinContext = hasOnset() && n($('t0').value)!==null;
-  if(!title || !action || !hasTroponinContext){
+  if(!rec || !rec.title || !rec.action || !hasTroponinContext){
     inline.hidden = true;
     inline.innerHTML = '';
     inline.className = 'inline-recommendation';
     return;
   }
-  const result = output.querySelector('.result');
-  const tone = result && result.classList.contains('bad') ? 'bad'
-    : result && result.classList.contains('ok') ? 'ok'
-    : result && result.classList.contains('warn') ? 'warn'
-    : 'info';
+  const tone = rec.tone || 'info';
+  const due = rec.due;
   const stageLabel = placeInlineRecommendation(inline);
   inline.hidden = false;
   inline.className = `inline-recommendation ${tone}`;
   inline.innerHTML = `
     <div class="inline-reco-label">${stageLabel}</div>
-    <div class="inline-reco-title">${title}</div>
-    <div class="inline-reco-action">${action}</div>
-    ${dueTitle ? `<div class="inline-reco-action"><strong>${dueTitle}</strong>${dueNote ? `<br><span>${dueNote}</span>` : ''}</div>` : ''}
+    <div class="inline-reco-title">${rec.title}</div>
+    <div class="inline-reco-action">${rec.action}</div>
+    ${due ? `<div class="inline-reco-action"><strong>${due.title}</strong>${due.note ? `<br><span>${due.note}</span>` : ''}</div>` : ''}
     <button class="inline-reco-link" type="button" id="inlineRecommendationLink">View full recommendation</button>
   `;
   const link = $('inlineRecommendationLink');
-  if(link) link.addEventListener('click', scrollToRecommendation);
+  if(link && link.addEventListener) link.addEventListener('click', scrollToRecommendation);
 }
 
 function scrollToRecommendation(){
@@ -1735,6 +1799,7 @@ function updateSerialFieldState(){
 }
 
 function dueCallout(label, time, intervalText){
+  pendingDue = { title: `${label} due at ${time}`, note: `${intervalText} from the 0h troponin, not from the previous sample.` };
   return `<div class="due-callout"><strong>${label} due at ${time}</strong><span>${intervalText} from the 0h troponin, not from the previous sample.</span></div>`;
 }
 
@@ -1887,6 +1952,14 @@ function writeWithTiming(html, cls, elapsed1, expectedFirstInterval, elapsed3){
 }
 
 function computeAdvice(){
+  lastRecommendation = null;
+  pendingDue = null;
+  computeAdviceCore();
+  renderInlineRecommendation();
+  updateWorkupPlan();
+}
+
+function computeAdviceCore(){
   updateInputSummary();
   updateSerialFieldState();
   updateSampleTimingChecks();
@@ -2164,6 +2237,121 @@ function eval3h(a, t0, t3, z99, t0Time, t1Time, t3Time, elapsed1, elapsed3, expe
   setFollowUpGuidance('intermediate');
 }
 
+/* Upfront workup plan (shown once onset is known, before the 0h troponin is entered) */
+function updateWorkupPlan(){
+  const el = $('workupPlan');
+  if(!el) return;
+  const t0 = n($('t0').value);
+  const onsetMin = presentationOnsetMinutes();
+  if(!hasOnset() || onsetMin===null || t0!==null){
+    el.hidden = true;
+    el.innerHTML = '';
+    el.className = 'workup-plan';
+    return;
+  }
+  const a = currentAssay();
+  const lod = a.lodSingleRuleOut;
+  const hh = Math.floor(onsetMin/60), mm = onsetMin%60;
+  const onsetText = hh>0 ? `${hh} h ${mm} min` : `${mm} min`;
+  let tone = 'info', title = '', body = '';
+  if(onsetMin > 120){
+    tone = 'ok';
+    title = 'One troponin may be enough';
+    body = `Symptom onset was ${onsetText} ago — already beyond 2 h. Take the 0h troponin now: a single result &lt;${lod} ng/L can rule out ACS without a second sample. If it is ≥${lod} ng/L, follow the serial pathway below.`;
+  } else if(onsetMin > 105){
+    const gap = 120 - onsetMin;
+    const ref = getPresentationReferenceDate();
+    const targetText = (onsetMode()==='at' && ref)
+      ? `at ${fmtTime(addMinutes(ref, gap))}`
+      : `in about ${gap} min`;
+    title = 'Close to the 2 h mark';
+    body = `Symptom onset was ${onsetText} ago — about ${gap} min short of 2 h. If it is clinically safe to wait, drawing the first troponin ${targetText} (2 h after onset) lets a single result &lt;${lod} ng/L rule out without a second sample. Otherwise take the 0h troponin now and use the 0/1 h serial pathway.`;
+  } else if(onsetMin <= 60){
+    title = 'Early presenter — plan serial troponins';
+    body = `Symptom onset was ${onsetText} ago (≤60 min). Take the 0h troponin now. If it is &lt;5 ng/L the serial sample is at 2 h (0/2 h pathway). At least one troponin must be taken more than 2 h after symptom onset.`;
+  } else {
+    title = 'Plan a 0/1 h serial pathway';
+    body = `Symptom onset was ${onsetText} ago. Take the 0h troponin now and plan a 1 h serial sample (0/1 h pathway). A single-sample rule-out is only possible once a troponin is taken more than 2 h after onset.`;
+  }
+  el.hidden = false;
+  el.className = `workup-plan ${tone}`;
+  el.innerHTML = `
+    <div class="workup-plan-label">Workup plan</div>
+    <div class="workup-plan-title">${title}</div>
+    <div class="workup-plan-body">${body}</div>`;
+}
+
+/* Plain-text handover summary for clinical notes */
+function buildHandoverSummary(){
+  const a = currentAssay();
+  const onsetMin = presentationOnsetMinutes();
+  const t0 = n($('t0').value), t1 = n($('t1').value), t3 = n($('t3').value);
+  const heart = n($('heart').value);
+  const timeStr = id => { const p = parseTimeValue(($(id)||{value:''}).value); return p ? ` @ ${p.formatted}` : ''; };
+  const lines = [];
+  lines.push('Suspected ACS — hs-troponin workup');
+  lines.push(`Assay: ${a.name} (99th centile ${z99()} ng/L${$('sex').value==='lower' ? ', lower reference range' : ''})`);
+  lines.push(onsetMin===null
+    ? 'Symptom onset: not entered'
+    : `Symptom onset at presentation: ${Math.floor(onsetMin/60)} h ${onsetMin%60} min`);
+  if(t0!==null) lines.push(`0h troponin: ${fmt(t0)} ng/L${timeStr('t0Time')}`);
+  if(t1!==null) lines.push(`Serial troponin: ${fmt(t1)} ng/L${timeStr('t1Time')}`);
+  if(t3!==null) lines.push(`3h troponin: ${fmt(t3)} ng/L${timeStr('t3Time')}`);
+  if(heart!==null) lines.push(`HEART score: ${heart}`);
+  if(lastRecommendation && lastRecommendation.title){
+    lines.push(`Recommendation: ${stripHtml(lastRecommendation.title)} — ${stripHtml(lastRecommendation.action)}`);
+  }
+  lines.push('Decision support only; does not replace ECG interpretation or clinical review.');
+  return lines.join('\n');
+}
+
+function copyHandoverSummary(){
+  const btn = $('copySummaryBtn');
+  const text = buildHandoverSummary();
+  const done = ok => {
+    if(!btn) return;
+    const original = btn.textContent;
+    btn.textContent = ok ? 'Copied' : 'Copy failed';
+    setTimeout(() => { btn.textContent = original; }, 1600);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(() => done(true)).catch(() => done(false));
+    return;
+  }
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    done(true);
+  }catch(err){
+    done(false);
+  }
+}
+
+/* Reset the form for a new patient (assay and sex are preserved) */
+function clearAllInputs(){
+  ['onsetHours','onsetMins','onsetAt','t0','t1','t3','t0Time','t1Time','t3Time','heart'].forEach(id => {
+    const el = $(id);
+    if(el){ el.value = ''; el.setCustomValidity && el.setCustomValidity(''); }
+  });
+  ['heartHistory','heartECG','heartAge','heartRisk','heartTrop'].forEach(id => {
+    const el = $(id);
+    if(el) el.value = '0';
+  });
+  const auto = $('heartTropAuto');
+  if(auto) auto.checked = false;
+  presentationReferenceDate = null;
+  presentationTimingSignature = '';
+  heartComputeTotal();
+  updateAssayUI();
+  setTropSectionVisibility();
+  const first = onsetMode()==='at' ? $('onsetAt') : $('onsetHours');
+  if(first && first.focus) first.focus();
+}
+
 /* Troponin time wrappers toggle */
 function toggleTimeWrappers(){
   const show = $('includeTimes') && $('includeTimes').checked;
@@ -2188,11 +2376,9 @@ function initRecommendationToggle(){
 }
 
 function initInlineRecommendationSync(){
-  syncInlineRecommendationFromOutput();
-  if (window.MutationObserver && $('output')) {
-    const observer = new MutationObserver(syncInlineRecommendationFromOutput);
-    observer.observe($('output'), { childList:true, subtree:true, characterData:true });
-  }
+  // The inline card is now rendered directly from the structured recommendation
+  // produced by computeAdvice(); no DOM scraping/observer required.
+  renderInlineRecommendation();
 }
 
 /* Initial UI state */
@@ -2233,6 +2419,11 @@ function initUI(){
   heartComputeTotal();
   // call auto troponin score at load in case the toggle is on
   heartAutoTroponinScore();
+  if ($('clearBtn')) $('clearBtn').addEventListener('click', ()=>{
+    const ok = (typeof confirm !== 'function') || confirm('Clear all entries and start a new patient?');
+    if (ok) clearAllInputs();
+  });
+  if ($('copySummaryBtn')) $('copySummaryBtn').addEventListener('click', copyHandoverSummary);
   initOutpatientAid();
   initRecommendationToggle();
   initInlineRecommendationSync();
