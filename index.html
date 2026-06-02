@@ -2258,7 +2258,7 @@ function updateWorkupPlan(){
     tone = 'ok';
     title = 'One troponin may be enough';
     body = `Symptom onset was ${onsetText} ago — already beyond 2 h. Take the 0h troponin now: a single result &lt;${lod} ng/L can rule out ACS without a second sample. If it is ≥${lod} ng/L, follow the serial pathway below.`;
-  } else if(onsetMin > 90){
+  } else if(onsetMin > 105){
     const gap = 120 - onsetMin;
     const ref = getPresentationReferenceDate();
     const targetText = (onsetMode()==='at' && ref)

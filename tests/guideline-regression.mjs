@@ -631,9 +631,9 @@ const workupPlanCases = [
   },
   {
     name: 'workup plan nudges to draw at 2h when close to the mark',
-    values: { assay: 'alinity', sex: 'female', onsetHours: 1, onsetMins: 40 },
+    values: { assay: 'alinity', sex: 'female', onsetHours: 1, onsetMins: 50 },
     className: 'workup-plan info',
-    expect: ['Close to the 2 h mark', 'about 20 min short of 2 h', 'rule out without a second sample']
+    expect: ['Close to the 2 h mark', 'about 10 min short of 2 h', 'rule out without a second sample']
   },
   {
     name: 'workup plan explains the 0/2h pathway for early presenters',
@@ -642,8 +642,8 @@ const workupPlanCases = [
     expect: ['Early presenter', '0/2 h pathway', 'more than 2 h after symptom onset']
   },
   {
-    name: 'workup plan defaults to 0/1h pathway in the 1–1.5h window',
-    values: { assay: 'alinity', sex: 'female', onsetHours: 1, onsetMins: 15 },
+    name: 'workup plan stays on 0/1h pathway just outside the 15 min window (100 min)',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 1, onsetMins: 40 },
     className: 'workup-plan info',
     expect: ['Plan a 0/1 h serial pathway', 'plan a 1 h serial sample']
   }
