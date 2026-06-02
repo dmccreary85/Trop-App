@@ -101,7 +101,7 @@ function createApp(){
   }
 
   vm.runInContext(`${script}
-globalThis.__testApi = { computeAdvice, updateAssayUI, updateOnsetModeUI, setTropSectionVisibility, inlineRecommendationStage };`, context);
+globalThis.__testApi = { computeAdvice, updateAssayUI, updateOnsetModeUI, setTropSectionVisibility, inlineRecommendationStage, buildHandoverSummary };`, context);
 
   function set(values){
     for (const [id, value] of Object.entries(values)) {
@@ -139,7 +139,11 @@ globalThis.__testApi = { computeAdvice, updateAssayUI, updateOnsetModeUI, setTro
     return context.__testApi.inlineRecommendationStage();
   }
 
-  return { set, output, text, element, inlineStage };
+  function handoverSummary(){
+    return context.__testApi.buildHandoverSummary();
+  }
+
+  return { set, output, text, element, inlineStage, handoverSummary };
 }
 
 const cases = [
@@ -616,6 +620,84 @@ for (const testCase of invalidInputCases) {
     assert.equal(app.element(id).style[prop], expected, `${testCase.name}: ${id}.${prop} mismatch`);
   }
   console.log(`PASS ${testCase.name}`);
+}
+
+const workupPlanCases = [
+  {
+    name: 'workup plan flags single-sample rule-out when onset >2h',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 3 },
+    className: 'workup-plan ok',
+    expect: ['One troponin may be enough', 'single result <4 ng/L can rule out']
+  },
+  {
+    name: 'workup plan nudges to draw at 2h when close to the mark',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 1, onsetMins: 40 },
+    className: 'workup-plan info',
+    expect: ['Close to the 2 h mark', 'about 20 min short of 2 h', 'rule out without a second sample']
+  },
+  {
+    name: 'workup plan explains the 0/2h pathway for early presenters',
+    values: { assay: 'alinity', sex: 'female', onsetMins: 45 },
+    className: 'workup-plan info',
+    expect: ['Early presenter', '0/2 h pathway', 'more than 2 h after symptom onset']
+  },
+  {
+    name: 'workup plan defaults to 0/1h pathway in the 1–1.5h window',
+    values: { assay: 'alinity', sex: 'female', onsetHours: 1, onsetMins: 15 },
+    className: 'workup-plan info',
+    expect: ['Plan a 0/1 h serial pathway', 'plan a 1 h serial sample']
+  }
+];
+
+for (const testCase of workupPlanCases) {
+  const app = createApp();
+  app.set(testCase.values);
+  assert.equal(app.element('workupPlan').hidden, false, `${testCase.name}: workup plan hidden`);
+  assert.equal(app.element('workupPlan').className, testCase.className, `${testCase.name}: class mismatch`);
+  const plan = app.text('workupPlan');
+  for (const expected of testCase.expect) {
+    assert.ok(plan.includes(expected), `${testCase.name}: missing ${expected}\nRendered plan: ${plan}`);
+  }
+  console.log(`PASS ${testCase.name}`);
+}
+
+{
+  const app = createApp();
+  app.set({ assay: 'alinity', sex: 'female', onsetHours: 3, t0: 3 });
+  assert.equal(app.element('workupPlan').hidden, true, 'workup plan should hide once the 0h troponin is entered');
+  console.log('PASS workup plan hides after the 0h troponin is entered');
+}
+
+{
+  const app = createApp();
+  app.set({ assay: 'alinity', sex: 'female', onsetHours: 4 });
+  assert.equal(app.element('inlineRecommendation').hidden, true, 'inline recommendation should stay hidden before a 0h troponin');
+  app.set({ assay: 'alinity', sex: 'female', onsetHours: 4, t0: 64 });
+  assert.equal(app.element('inlineRecommendation').hidden, false, 'inline recommendation should render once 0h rules in');
+  assert.equal(app.element('inlineRecommendation').className, 'inline-recommendation bad', 'inline tone should follow the result');
+  const inline = app.text('inlineRecommendation');
+  for (const expected of ['Recommendation after 0h result', 'High risk - rule-in', 'Refer for Cardiology admission']) {
+    assert.ok(inline.includes(expected), `inline recommendation missing ${expected}\nRendered inline: ${inline}`);
+  }
+  console.log('PASS inline recommendation renders from the structured result object');
+}
+
+{
+  const app = createApp();
+  app.set({ assay: 'alinity', sex: 'female', onsetHours: 3, t0: 3, heart: 2 });
+  const summary = app.handoverSummary();
+  for (const expected of [
+    'Suspected ACS — hs-troponin workup',
+    'Assay: Alinity (99th centile 15 ng/L)',
+    'Symptom onset at presentation: 3 h 0 min',
+    '0h troponin: 3 ng/L',
+    'HEART score: 2',
+    'Recommendation: Low risk - single-sample rule-out',
+    'Decision support only'
+  ]) {
+    assert.ok(summary.includes(expected), `handover summary missing ${expected}\nRendered summary:\n${summary}`);
+  }
+  console.log('PASS handover summary captures inputs and recommendation');
 }
 
 console.log(`\n${passed}/${cases.length} guideline regression cases passed.`);
