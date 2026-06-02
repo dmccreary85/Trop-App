@@ -4,24 +4,30 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Suspected ACS Troponin Workflow (Alinity + POC)</title>
-<meta name="theme-color" content="#0b0f14" />
+<meta name="theme-color" content="#0b2538" />
 <link rel="manifest" href="manifest.webmanifest" />
 <style>
   :root{
-    --bg:#0b0f14;
-    --surface:#0f141b;
-    --card:#141b25;
+    --bg:#071827;
+    --surface:#0a1928;
+    --card:#102b46;
     --muted:#9fb0c3;
     --text:#e8f0f7;
     --green:#19b36b;
     --amber:#e6a23c;
     --red:#f35b5b;
-    --blue:#4aa3ff;
-    --border:#2a2a2a;
-    --accent:#6aa9ff;
-    --input-bg:#1c1c1c;
-    --control-border:rgba(255,255,255,0.16);
-    --control-border-hover:rgba(106,169,255,0.42);
+    --blue:#46b6c6;
+    --border:rgba(151,218,220,0.18);
+    --accent:#72d2d0;
+    --input-bg:#d5e8ec;
+    --input-text:#102b46;
+    --input-placeholder:#5e7887;
+    --control-border:rgba(198,238,240,0.66);
+    --control-border-hover:rgba(114,210,208,0.9);
+    --bayside-teal:#72d2d0;
+    --bayside-cyan:#46b6c6;
+    --bayside-navy:#102b46;
+    --bayside-deep:#071827;
     --radius-card:12px;
     --radius-input:8px;
     --shadow-elev-8:0 12px 24px rgba(0,0,0,0.35);
@@ -30,8 +36,9 @@
   body{
     margin:0;
     background:
-      radial-gradient(circle at 20% 0%, rgba(74,163,255,0.12), transparent 30%),
-      linear-gradient(180deg, #0b0f14 0%, #0a0d12 100%);
+      radial-gradient(circle at 10% 0%, rgba(132,224,219,0.34), transparent 32%),
+      radial-gradient(circle at 74% 10%, rgba(70,182,198,0.16), transparent 36%),
+      linear-gradient(145deg, #14394d 0%, #0e2b45 42%, #071827 100%);
     color:var(--text);
     font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
     font-size:16px;
@@ -42,6 +49,8 @@
     border-bottom:1px solid var(--border);
     display:flex;
     justify-content:center;
+    background:linear-gradient(90deg, rgba(114,210,208,0.12), rgba(16,43,70,0.18) 42%, rgba(7,24,39,0.64));
+    backdrop-filter:blur(14px);
   }
   .header-inner{
     width:100%;
@@ -51,10 +60,41 @@
     justify-content:space-between;
     gap:16px;
   }
-  header h1{margin:0;font-size:20px;font-weight:650;line-height:1.2}
-  .header-note{font-size:13px;color:var(--muted);margin-top:4px;max-width:680px}
+  .brand-lockup{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    min-width:0;
+  }
+  .brand-mark{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    width:42px;
+    height:42px;
+    border:1px solid rgba(255,255,255,0.18);
+    border-radius:11px;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(255,255,255,0.32), transparent 28%),
+      linear-gradient(135deg, #7fded9 0%, #3aa8bd 50%, #102b46 100%);
+    box-shadow:0 10px 22px rgba(0,0,0,0.24);
+    color:white;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:0;
+  }
+  .brand-name{
+    color:#ffffff;
+    font-size:20px;
+    font-weight:750;
+    line-height:1.12;
+    letter-spacing:0;
+  }
+  header h1{margin:3px 0 0;font-size:16px;font-weight:650;line-height:1.25;color:#d9f1f3}
+  .header-note{font-size:13px;color:var(--muted);margin-top:4px;max-width:720px}
   .header-badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-  .badge{font-size:12px;padding:5px 9px;border:1px solid var(--border);border-radius:999px;color:var(--muted);background:rgba(255,255,255,0.03);white-space:nowrap}
+  .badge{font-size:12px;padding:5px 9px;border:1px solid rgba(151,218,220,0.24);border-radius:999px;color:#c2d9df;background:rgba(7,24,39,0.34);white-space:nowrap}
   main{
     max-width:1180px;
     margin:0 auto;
@@ -65,13 +105,16 @@
     padding-bottom:calc(160px + env(safe-area-inset-bottom));
   }
   .card{
-    background:var(--card);
+    background:
+      linear-gradient(180deg, rgba(20,59,77,0.72), rgba(16,43,70,0.92)),
+      var(--card);
     border:1px solid var(--border);
     border-radius:var(--radius-card);
     padding:16px;
     display:flex;
     flex-direction:column;
     gap:16px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.035);
   }
   .card h2{margin:0;font-size:16px;font-weight:600}
   .section-title{
@@ -110,8 +153,8 @@
     transition:border-color .2s ease, background .2s ease, opacity .2s ease;
   }
   .sample-card.sample-active{
-    border-color:rgba(106,169,255,0.65);
-    background:rgba(74,163,255,0.08);
+    border-color:rgba(114,210,208,0.62);
+    background:rgba(70,182,198,0.09);
   }
   .sample-card.sample-complete{
     border-color:rgba(25,179,107,0.35);
@@ -144,8 +187,8 @@
     height:28px;
     padding:0 8px;
     border-radius:999px;
-    background:#203553;
-    color:#cfe2ff;
+    background:#1d3a5a;
+    color:#d8f4f5;
     font-size:13px;
     font-weight:700;
   }
@@ -178,7 +221,7 @@
     width:100%;
     background:var(--input-bg);
     border:1px solid var(--control-border);
-    color:var(--text);
+    color:var(--input-text);
     padding:12px;
     border-radius:var(--radius-input);
     outline:2px solid transparent;
@@ -187,6 +230,7 @@
   }
   input[type="number"]:hover,select:hover,.time-input:hover{
     border-color:var(--control-border-hover);
+    background:#e6f1f3;
   }
   select{
     cursor:pointer;
@@ -199,8 +243,8 @@
     letter-spacing:0.02em;
   }
   .time-input::placeholder{
-    color:var(--muted);
-    opacity:0.75;
+    color:var(--input-placeholder);
+    opacity:1;
   }
   input[type="number"]:focus,select:focus,.time-input:focus{
     outline-color:var(--accent);
@@ -231,10 +275,10 @@
   .help{font-size:14px;color:var(--muted)}
   .due-callout{
     margin-top:10px;
-    border:1px solid rgba(106,169,255,0.38);
+    border:1px solid rgba(114,210,208,0.36);
     border-left:5px solid var(--blue);
     border-radius:var(--radius-input);
-    background:rgba(74,163,255,0.10);
+    background:rgba(70,182,198,0.10);
     padding:10px 12px;
     color:var(--text);
   }
@@ -267,8 +311,8 @@
     color:#a8ddcf;
   }
   .sample-timing-check.info{
-    border-color:rgba(106,169,255,0.38);
-    background:rgba(74,163,255,0.10);
+    border-color:rgba(114,210,208,0.36);
+    background:rgba(70,182,198,0.10);
     color:var(--muted);
   }
   .sample-timing-check.warn{
@@ -324,9 +368,9 @@
     padding:8px 10px;
   }
   .segmented-btn.active{
-    background:#1e3a5c;
+    background:#173f5b;
     color:var(--text);
-    box-shadow:inset 0 0 0 1px rgba(106,169,255,0.35);
+    box-shadow:inset 0 0 0 1px rgba(114,210,208,0.34);
   }
   .clinical-note{
     border:1px solid rgba(230,162,60,0.45);
@@ -360,10 +404,10 @@
   }
   .input-summary strong{color:var(--text);font-weight:600}
   .inline-recommendation{
-    border:1px solid rgba(106,169,255,0.55);
+    border:1px solid rgba(114,210,208,0.5);
     border-left:6px solid var(--blue);
     border-radius:var(--radius-input);
-    background:#101923;
+    background:#0c1725;
     box-shadow:0 8px 18px rgba(0,0,0,0.22);
     padding:14px;
   }
@@ -400,7 +444,7 @@
     appearance:none;
     background:transparent;
     border:0;
-    color:#aed4ff;
+    color:#b7eef0;
     cursor:pointer;
     font:inherit;
     font-size:13px;
@@ -408,8 +452,8 @@
     margin-top:8px;
     padding:0;
   }
-  .btn{appearance:none;border:1px solid var(--control-border);background:var(--input-bg);color:var(--text);padding:12px 16px;border-radius:var(--radius-input);cursor:pointer;min-height:48px;font-size:16px}
-  .btn.primary{background:#1e3a5c;border-color:#274a75}
+  .btn{appearance:none;border:1px solid var(--control-border);background:var(--input-bg);color:var(--input-text);padding:12px 16px;border-radius:var(--radius-input);cursor:pointer;min-height:48px;font-size:16px}
+  .btn.primary{background:#173f5b;border-color:rgba(114,210,208,0.32);color:var(--text)}
   .btn:hover{border-color:var(--control-border-hover)}
   .btn.ghost{min-height:40px}
   .toggle {font-size:14px;color:var(--muted);gap:10px;}
@@ -468,15 +512,15 @@
     gap:12px;
     min-height:48px;
     padding:10px 12px;
-    border:1px solid rgba(106,169,255,0.24);
+    border:1px solid rgba(114,210,208,0.26);
     border-radius:var(--radius-input);
-    background:#132033;
+    background:#102b46;
     color:var(--text);
     text-decoration:none;
   }
   .resource-link:hover{
-    border-color:rgba(106,169,255,0.65);
-    background:#172a43;
+    border-color:rgba(114,210,208,0.66);
+    background:#133552;
   }
   .resource-title{
     display:block;
@@ -496,6 +540,14 @@
     color:var(--muted);
     flex:0 0 auto;
     font-size:14px;
+  }
+  .decision-aid-steps{
+    border-top:1px solid rgba(255,255,255,0.08);
+    margin-top:10px;
+    padding-top:2px;
+  }
+  .decision-aid-steps .followup-action{
+    grid-template-columns:132px minmax(0,1fr);
   }
   .followup-output{
     display:grid;
@@ -552,10 +604,10 @@
     line-height:1.35;
   }
   .investigation-note{
-    border:1px solid rgba(106,169,255,0.22);
+    border:1px solid rgba(114,210,208,0.24);
     border-left:5px solid var(--blue);
     border-radius:var(--radius-input);
-    background:rgba(74,163,255,0.08);
+    background:rgba(70,182,198,0.08);
     color:var(--muted);
     font-size:13px;
     line-height:1.4;
@@ -592,9 +644,9 @@
     grid-template-columns:170px minmax(0,1fr);
     gap:14px;
     align-items:start;
-    border:1px solid rgba(106,169,255,0.18);
+    border:1px solid rgba(114,210,208,0.18);
     border-radius:var(--radius-input);
-    background:#101923;
+    background:#0c1725;
     padding:12px;
   }
   .investigation-title{
@@ -641,7 +693,7 @@
   .recommendation-card{
     position:sticky;
     bottom:0;
-    background:rgba(20,27,37,0.95);
+    background:rgba(18,34,53,0.95);
     border:1px solid var(--border);
     border-radius:var(--radius-card);
     box-shadow:var(--shadow-elev-8);
@@ -697,6 +749,7 @@
     #followUpSection{order:5}
     #safetySection{order:6}
     #referencesSection{order:7}
+    #outpatientAidSection{order:8}
     .recommendation-card{
       position:static;
       bottom:auto;
@@ -747,9 +800,13 @@
 <body>
 <header>
   <div class="header-inner">
-    <div>
-      <h1>Suspected ACS Troponin Workflow</h1>
-      <div class="header-note">Alfred guideline v5 decision support for applying assay-specific hs-troponin timing, thresholds, and disposition prompts.</div>
+    <div class="brand-lockup">
+      <div class="brand-mark" aria-hidden="true">BH</div>
+      <div>
+        <div class="brand-name">Bayside Health</div>
+        <h1>Suspected ACS Troponin Workflow</h1>
+        <div class="header-note">Decision support using Alfred guideline v5 for assay-specific hs-troponin timing, thresholds, and disposition prompts.</div>
+      </div>
     </div>
     <div class="header-badges" aria-label="App status">
       <span class="badge">Decision support</span>
@@ -1019,6 +1076,13 @@
     </details>
   </section>
 
+  <section class="card" id="outpatientAidSection">
+    <details>
+      <summary>Outpatient follow-up decision aid</summary>
+      <div class="details-body" id="outpatientAidOutput" aria-label="Outpatient follow-up decision aid"></div>
+    </details>
+  </section>
+
   <section class="recommendation-card" id="recommendation">
     <div class="recommendation-header">
       <h2>Recommendation</h2>
@@ -1064,7 +1128,7 @@ function heartAutoTroponinScore(){
   computeAdvice();
 }
 /* PWA registration */
-const SW_VERSION = 'v50';
+const SW_VERSION = 'v58';
 if ('serviceWorker' in navigator) {
   const swUrl = `./sw.js?ver=${SW_VERSION}`;
   navigator.serviceWorker.register(swUrl).then(registration => {
@@ -1477,10 +1541,19 @@ function followUpPanel(title, cls, body, extra=''){
   </div>`;
 }
 
-function outpatientTestingOptions(){
+function outpatientTestingOptions(options={}){
+  const includeDecisionAid = options.includeDecisionAid === true;
+  const decisionAid = includeDecisionAid ? `
+    <div class="followup-action-list decision-aid-steps" aria-label="Outpatient follow-up decision steps">
+      <div class="followup-action"><strong>Pathway fit</strong><span>Usually for intermediate-risk patients being discharged. High-risk outpatient follow-up is only occasional after in-person cardiology registrar review.</span></div>
+      <div class="followup-action"><strong>Senior decision</strong><span>Discuss disposition with a senior ED clinician; involve Cardiology when outpatient testing or admission is being considered.</span></div>
+      <div class="followup-action"><strong>Before discharge</strong><span>If early outpatient testing is planned, discuss with the cardiology registrar before the patient leaves ED.</span></div>
+      <div class="followup-action"><strong>Test choice</strong><span>Use the options below to structure the discussion. The app does not choose CTCA, MPI, or stress echo.</span></div>
+    </div>` : '';
   return `<div class="investigation-note">
     <strong class="investigation-note-title">Outpatient testing decision</strong>
     <p>Use the troponin pathway and HEART score to decide whether outpatient testing is appropriate and how senior the disposition discussion should be. If discharge with outpatient testing is being considered, choose CTCA, MPI, or stress echo with Cardiology or a senior ED clinician.</p>
+    ${decisionAid}
   </div>
   <details class="investigation-details">
     <summary>Investigation options reference</summary>
@@ -1511,6 +1584,12 @@ function outpatientTestingOptions(){
       </div>
     </div>
   </details>`;
+}
+
+function initOutpatientAid(){
+  const outpatientAid = $('outpatientAidOutput');
+  if(!outpatientAid) return;
+  outpatientAid.innerHTML = outpatientTestingOptions({ includeDecisionAid:true });
 }
 
 function lowRiskFollowUp(heart){
@@ -2154,6 +2233,7 @@ function initUI(){
   heartComputeTotal();
   // call auto troponin score at load in case the toggle is on
   heartAutoTroponinScore();
+  initOutpatientAid();
   initRecommendationToggle();
   initInlineRecommendationSync();
 }

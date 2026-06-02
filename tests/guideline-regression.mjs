@@ -505,6 +505,21 @@ for (const testCase of followUpCases) {
   console.log(`PASS ${testCase.name}`);
 }
 
+{
+  const app = createApp();
+  assert.ok(app.element('outpatientAidSection'), 'outpatient follow-up aid section missing');
+  const aid = app.text('outpatientAidOutput');
+  for (const expected of [
+    'Pathway fit Usually for intermediate-risk patients being discharged',
+    'Before discharge If early outpatient testing is planned',
+    'Test choice Use the options below to structure the discussion',
+    'The app does not choose CTCA, MPI, or stress echo'
+  ]) {
+    assert.ok(aid.includes(expected), `reference outpatient aid missing ${expected}\nRendered aid: ${aid}`);
+  }
+  console.log('PASS reference outpatient aid is guided but non-prescriptive');
+}
+
 const inlineStageCases = [
   {
     name: 'inline recommendation remains anchored to 0h when 0h is rule-in despite later entries',

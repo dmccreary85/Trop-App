@@ -1,12 +1,12 @@
 {
-  "name": "ACS Troponin Workflow — Alfred",
+  "name": "Bayside Health ACS Troponin Workflow",
   "short_name": "Troponin",
   "description": "Decision support for the Alfred ACS high-sensitivity troponin workflow (Alinity + POC).",
   "display": "standalone",
   "start_url": "./index.html",
   "scope": "./",
-  "background_color": "#0b0f14",
-  "theme_color": "#0b0f14",
+  "background_color": "#071827",
+  "theme_color": "#0b2538",
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -20,4 +20,3 @@
     }
   ]
 }
-
